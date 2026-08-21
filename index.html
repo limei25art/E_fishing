@@ -17,7 +17,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="format-detection" content="telephone=no">
-  <meta name="apple-mobile-web-app-title" content="Efishing">
+  <meta name="apple-mobile-web-app-title" content="Egarden">
   <link rel="icon" type="image/png" href="favicon/favicon-96x96.png" sizes="96x96">
   <link rel="shortcut icon" href="favicon/favicon.ico">
   <link rel="apple-touch-icon" sizes="180x180" href="favicon/apple-touch-icon.png">
@@ -1591,9 +1591,9 @@ const SMALL_FISH_ENERGY = 5;
 const MID_FISH_SCORE = 200;     // 魚 A/B/C（普通魚群）
 const MID_FISH_ENERGY = 8;
 const SHI_FISH_SCORE = 220;     // 屎屎魚（普通魚群 5%）
-const SHI_FISH_ENERGY = 10;
+const SHI_FISH_ENERGY = 20;
 const BIRD_FISH_SCORE = 250;    // 鳥仔魚（普通魚群 5%）
-const BIRD_FISH_ENERGY = 10;
+const BIRD_FISH_ENERGY = 20;
 const CLOUD_FISH_SCORE = 300;   // 雲雲魚（約 20 秒特別）
 const CLOUD_FISH_ENERGY = 12;
 const DUMPLING_FISH_SCORE = 300; // 餃子魚（約 30 秒特別）
@@ -1612,7 +1612,7 @@ const MONSTER_SCORE = 800;
 const MONSTER_ENERGY = 100;
 const URCHIN_SCORE = 100;       // 海膽（普通魚群 5%）
 const URCHIN_ENERGY = -8;
-const WATERMELON_FISH_SCORE = -20; // 西瓜魚（普通魚群 10%）
+const WATERMELON_FISH_SCORE = -20; // 西瓜魚（普通魚群 8%）
 const WATERMELON_FISH_ENERGY = -8;
 const TRASH_PENALTY = 30;       // can / boots
 const TRASH_SPAWN_INTERVAL = 20000; // 每 20 秒一件垃圾
@@ -2628,7 +2628,7 @@ function createFish() {
   addOpt('urchin', 5, function() {
     return { color: 'urchin', rewardScore: URCHIN_SCORE, rewardEnergy: URCHIN_ENERGY, fishTier: 'urchin', fishKind: 'urchin' };
   });
-  addOpt('watermelon', 10, function() {
+  addOpt('watermelon', 8, function() {
     return { color: 'watermelon', rewardScore: WATERMELON_FISH_SCORE, rewardEnergy: WATERMELON_FISH_ENERGY, fishTier: 'watermelon', fishKind: 'watermelon' };
   });
   addOpt('fish_shi', 5, function() {
@@ -6672,28 +6672,32 @@ infoBtn.addEventListener('click', () => {
     '<ol style="padding-left:1.2em;font-weight:400;font-size:0.92em;line-height:1.55;">' +
       '<li>左右移動，甩竿把東西丟進雲。</li>' +
       '<li>元氣持續下降；好魚補回，垃圾／海膽／西瓜魚會扣。</li>' +
-      '<li>1 秒內 +1000 出章魚／海龜；+1500 出榴槤魚。</li>' +
-      '<li>元氣&lt;50 → Molamola；元氣&lt;35 → 水怪魚。</li>' +
+      '<li>元氣歸零就結束。</li>' +
     '</ol>' +
     '<hr style="margin:12px 0;">' +
-    '<div style="font-weight:500;color:#4a86d8;margin-bottom:6px;font-size:0.92em;">分數／元氣</div>' +
-    infoFishRow('img/small_fish_a.png', '小魚群 · 全日', '+100／+5') +
-    infoFishRow('img/fish_a.png', '普通魚群 · 全日', '+200／+8') +
-    infoFishRow('img/fish_shi.png', '屎屎魚（5%）· 晚', '+220／+10') +
-    infoFishRow('img/fish_bird.png', '鳥仔魚（5%）· 日', '+250／+10') +
-    infoFishRow('img/seaurchin.png', '海膽（5%）· 晚', '+100／<span style="color:#e11;">-8</span>') +
-    infoFishRow('img/fish_watermelon.png', '西瓜魚（10%）· 全日', '<span style="color:#e11;">-20／-8</span>') +
-    infoFishRow('img/fish_cloud.png', '雲雲魚 · 約20秒 · 日', '+300／+12') +
-    infoFishRow('img/fish_dumpling.png', '餃子魚 · 約30秒 · 日', '+300／+12') +
-    infoFishRow('img/fish_heart.png', '心心魚 · 約30秒 · 全日', '+350／+15') +
-    infoFishRow('img/fish_dog.png', '狗狗魚 · 約30秒 · 日', '+350／+15') +
-    infoFishRow('img/fish_bear.png', '熊仔魚 · 約30秒 · 晚', '+350／+15') +
-    infoFishRow('img/molamola.png', 'Molamola（元氣&lt;50）· 全日', '+100／+50') +
-    infoFishRow('img/fish_monster.png', '水怪魚（元氣&lt;35）· 全日', '+800／+100') +
-    infoFishRow('img/octopus.png', '章魚（1秒+1000）· 晚', '+400／+20') +
-    infoFishRow('img/turtle.png', '海龜（1秒+1000）· 日', '+400／+30') +
-    infoFishRow('img/fish_durian.png', '榴槤魚（1秒+1500）· 日', '+500／+30') +
-    infoFishRow('img/can.png', '垃圾 · 全日', '0／<span style="color:#e11;">-30</span>');
+    '<div style="font-weight:500;color:#4a86d8;margin-bottom:6px;font-size:0.92em;">圖 · 名稱 · 出現時間 · 分數／元氣</div>' +
+    infoFishRow('img/small_fish_a.png', '小魚 A · 全日', '+100／+5') +
+    infoFishRow('img/small_fish_b.png', '小魚 B · 全日', '+100／+5') +
+    infoFishRow('img/small_fish_c.png', '小魚 C · 全日', '+100／+5') +
+    infoFishRow('img/fish_a.png', '魚 A · 全日', '+200／+8') +
+    infoFishRow('img/fish_b.png', '魚 B · 全日', '+200／+8') +
+    infoFishRow('img/fish_c.png', '魚 C · 全日', '+200／+8') +
+    infoFishRow('img/fish_shi.png', '屎屎魚 · 晚', '+220／+20') +
+    infoFishRow('img/fish_bird.png', '鳥仔魚 · 日', '+250／+20') +
+    infoFishRow('img/fish_dumpling.png', '餃子魚 · 日', '+300／+12') +
+    infoFishRow('img/fish_cloud.png', '雲雲魚 · 日', '+300／+12') +
+    infoFishRow('img/fish_heart.png', '心心魚 · 全日', '+350／+15') +
+    infoFishRow('img/fish_dog.png', '狗狗魚 · 日', '+350／+15') +
+    infoFishRow('img/fish_bear.png', '熊仔魚 · 晚', '+350／+15') +
+    infoFishRow('img/octopus.png', '章魚 · 晚', '+400／+20') +
+    infoFishRow('img/turtle.png', '海龜 · 日', '+400／+30') +
+    infoFishRow('img/fish_durian.png', '榴槤魚 · 日', '+500／+30') +
+    infoFishRow('img/molamola.png', 'Molamola · 全日', '+100／+50') +
+    infoFishRow('img/fish_monster.png', '水怪魚 · 全日', '+800／+100') +
+    infoFishRow('img/seaurchin.png', '海膽 · 晚', '+100／<span style="color:#e11;">-8</span>') +
+    infoFishRow('img/fish_watermelon.png', '西瓜魚 · 全日', '<span style="color:#e11;">-20／-8</span>') +
+    infoFishRow('img/can.png', '垃圾 can · 全日', '0／<span style="color:#e11;">-30</span>') +
+    infoFishRow('img/boots.png', '垃圾 boots · 全日', '0／<span style="color:#e11;">-30</span>');
   // 同步左上角小按鈕狀態
   if (typeof updateInfoTopTools === 'function') updateInfoTopTools();
 });
