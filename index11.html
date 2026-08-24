@@ -2021,6 +2021,13 @@ const FISH_RESULT_ORDER = [
   'molamola', 'fish_monster',
   'urchin', 'watermelon'
 ];
+// 未釣到：全灰階 + 半透明（可調）
+// grayscalePct: 100 = 完全無彩色；alpha: 越小越淡
+const RESULT_MISS_GRAYSCALE_PCT = 100;
+const RESULT_MISS_ALPHA = 0.32;
+const RESULT_MISS_CELL_BG = 'rgba(230,234,240,0.95)';
+const RESULT_MISS_BADGE_BG = '#9aa3b0';
+const RESULT_MISS_NAME_COLOR = '#9aa3b0';
 function recordCatch(typeKey, pts) {
   if (!typeKey) return;
   collectedFishCounts[typeKey] = (collectedFishCounts[typeKey] || 0) + 1;
@@ -4946,16 +4953,16 @@ function generateResultShareCard() {
       g.shadowBlur = 12;
       g.shadowOffsetY = 4;
       roundRectPath(g, x, y, cellW, cellH, 22);
-      g.fillStyle = got ? '#fff' : 'rgba(236,240,246,0.9)';
+      g.fillStyle = got ? '#fff' : RESULT_MISS_CELL_BG;
       g.fill();
       g.restore();
 
       const im = imgs[i];
       g.save();
       if (!got) {
-        // 全灰階 + 半透明，完全看不到彩色
-        g.filter = 'grayscale(100%)';
-        g.globalAlpha = 0.42;
+        // 全灰階 + 半透明（參數見 RESULT_MISS_*）
+        g.filter = 'grayscale(' + RESULT_MISS_GRAYSCALE_PCT + '%)';
+        g.globalAlpha = RESULT_MISS_ALPHA;
       }
       if (im && im.naturalWidth) {
         const maxImgW = cellW * 0.72;
@@ -4965,17 +4972,16 @@ function generateResultShareCard() {
         const ih = im.naturalHeight * scale;
         g.drawImage(im, x + (cellW - iw) / 2, y + 12, iw, ih);
       } else {
-        g.fillStyle = got ? '#c5d0e0' : '#b0b8c4';
+        g.fillStyle = got ? '#c5d0e0' : RESULT_MISS_BADGE_BG;
         g.font = '600 18px sans-serif';
         g.textAlign = 'center';
         g.fillText(fishTypeLabel(keys[i]).slice(0, 4), x + cellW / 2, y + cellH * 0.38);
       }
       g.restore();
-      // 確保後續繪製不受 filter 影響
       g.filter = 'none';
       g.globalAlpha = 1;
 
-      g.fillStyle = got ? '#6b7c99' : '#a8b4c8';
+      g.fillStyle = got ? '#6b7c99' : RESULT_MISS_NAME_COLOR;
       g.font = '500 15px "Noto Sans TC", "Segoe UI", system-ui, sans-serif';
       g.textAlign = 'center';
       g.textBaseline = 'middle';
@@ -4993,7 +4999,7 @@ function generateResultShareCard() {
         bgad.addColorStop(1, '#7c5cbf');
         g.fillStyle = bgad;
       } else {
-        g.fillStyle = '#b8c0cc';
+        g.fillStyle = RESULT_MISS_BADGE_BG;
       }
       g.fill();
       g.fillStyle = '#fff';
