@@ -1576,9 +1576,9 @@ const SMALL_FISH_ENERGY = 5;
 const MID_FISH_SCORE = 200;     // 魚 A/B/C（普通魚群）
 const MID_FISH_ENERGY = 8;
 const SHI_FISH_SCORE = 220;     // 屎屎魚（普通魚群 5%）
-const SHI_FISH_ENERGY = 10;
+const SHI_FISH_ENERGY = 20;
 const BIRD_FISH_SCORE = 250;    // 鳥仔魚（普通魚群 5%）
-const BIRD_FISH_ENERGY = 10;
+const BIRD_FISH_ENERGY = 20;
 const CLOUD_FISH_SCORE = 300;   // 雲雲魚（約 20 秒特別）
 const CLOUD_FISH_ENERGY = 12;
 const DUMPLING_FISH_SCORE = 300; // 餃子魚（約 30 秒特別）
@@ -1597,7 +1597,7 @@ const MONSTER_SCORE = 800;
 const MONSTER_ENERGY = 100;
 const URCHIN_SCORE = 100;       // 海膽（普通魚群 5%）
 const URCHIN_ENERGY = -8;
-const WATERMELON_FISH_SCORE = -20; // 西瓜魚（普通魚群 10%）
+const WATERMELON_FISH_SCORE = -20; // 西瓜魚（普通魚群 8%）
 const WATERMELON_FISH_ENERGY = -8;
 const TRASH_PENALTY = 30;       // can / boots
 const TRASH_SPAWN_INTERVAL = 20000; // 每 20 秒一件垃圾
@@ -1988,7 +1988,7 @@ const FISH_TYPE_IMG_SRC = {
   turtle: 'img/turtle.png', fish_durian: 'img/fish_durian.png', fish_monster: 'img/fish_monster.png',
   can: 'img/can.png', bottle: 'img/boots.png', boots: 'img/boots.png'
 };
-// 結算／分享卡專用圖（20 種魚；檔案放 img/fishing-result/，沒有則自動退回遊戲圖）
+// 結算／分享卡專用圖（20 種；放 img/fishing-result/，缺檔則退回遊戲圖）
 const FISH_RESULT_IMG_SRC = {
   small_0: 'img/fishing-result/small_fish_a.png',
   small_1: 'img/fishing-result/small_fish_b.png',
@@ -2011,7 +2011,6 @@ const FISH_RESULT_IMG_SRC = {
   urchin: 'img/fishing-result/seaurchin.png',
   watermelon: 'img/fishing-result/fish_watermelon.png'
 };
-// 分享卡固定 20 種魚順序（不含垃圾）
 const FISH_RESULT_ORDER = [
   'small_0', 'small_1', 'small_2',
   'mid_0', 'mid_1', 'mid_2',
@@ -2035,11 +2034,9 @@ function fishTypeLabel(key) {
 function fishTypeImgSrc(key) {
   return FISH_TYPE_IMG_SRC[key] || '';
 }
-/** 結算專用圖路徑（優先 fishing-result，否則遊戲圖） */
 function fishResultImgSrc(key) {
   return FISH_RESULT_IMG_SRC[key] || FISH_TYPE_IMG_SRC[key] || '';
 }
-/** 載入結算圖：先試 fishing-result，失敗再試遊戲素材 */
 function loadResultShareImage(key) {
   const primary = FISH_RESULT_IMG_SRC[key];
   const fallback = FISH_TYPE_IMG_SRC[key];
@@ -2662,7 +2659,7 @@ function createFish() {
   addOpt('urchin', 5, function() {
     return { color: 'urchin', rewardScore: URCHIN_SCORE, rewardEnergy: URCHIN_ENERGY, fishTier: 'urchin', fishKind: 'urchin' };
   });
-  addOpt('watermelon', 10, function() {
+  addOpt('watermelon', 8, function() {
     return { color: 'watermelon', rewardScore: WATERMELON_FISH_SCORE, rewardEnergy: WATERMELON_FISH_ENERGY, fishTier: 'watermelon', fishKind: 'watermelon' };
   });
   addOpt('fish_shi', 5, function() {
@@ -4779,7 +4776,7 @@ function loadShareImage(src) {
  */
 function generateResultShareCard() {
   const W = 1080;
-  // 固定 20 種魚（有釣到的優先排前，其餘依 FISH_RESULT_ORDER）
+  // 固定 20 種魚：有釣到的優先，其餘依 FISH_RESULT_ORDER
   const caughtKeys = Object.keys(collectedFishCounts).filter(function(k) {
     return FISH_RESULT_ORDER.indexOf(k) >= 0 && (collectedFishCounts[k] || 0) > 0;
   });
@@ -4805,29 +4802,28 @@ function generateResultShareCard() {
   }
   const playTime = formatPlayTime(elapsedGameTime);
 
-  // —— 先算版面：固定 20 格（4×5）——
+  // —— 版面：固定 20 格（4×5）——
   const cardX = 56, cardY = 56, cardW = W - 112;
   const gridPad = 36;
   const gridLeft = cardX + gridPad;
   const gridW = cardW - gridPad * 2;
-  const maxCells = keys.length; // 20 種全列
+  const maxCells = keys.length;
   const cols = 4;
   const rows = Math.max(1, Math.ceil(Math.max(1, maxCells) / cols));
   const gap = 14;
   const cellW = (gridW - gap * (cols - 1)) / cols;
   const cellH = Math.min(168, Math.max(128, cellW * 0.98));
 
-  const headerH = 150; // 兩排標題色帶
-  const scoreBlockH = 210; // EDAN + 分數區
+  const headerH = 150;
+  const scoreBlockH = 210;
   const statsH = 90;
   const gridTopOff = 24;
   const gridH = maxCells === 0 ? 140 : (rows * cellH + (rows - 1) * gap);
   const footerPad = 72;
   const cardInner = headerH + scoreBlockH + statsH + gridTopOff + gridH + 40;
   const cardH = Math.max(900, cardInner);
-  const H = cardY + cardH + footerPad + 36; // 整圖高度可變
+  const H = cardY + cardH + footerPad + 36;
 
-  // 優先載入 fishing-result 專用圖，失敗再退回遊戲圖
   const loads = keys.map(function(k) { return loadResultShareImage(k); });
   loads.push(loadShareImage('img/EDAN.png'));
   return Promise.all(loads).then(function(allImgs) {
@@ -4935,7 +4931,7 @@ function generateResultShareCard() {
       g.fillText(statItems[i].value, cx, statsY + 36);
     }
 
-    // 20 種魚 grid（專用 fishing-result 圖；未釣到半透明 ×0）
+    // 20 種魚 grid：未釣到 = 全灰階 + 半透明（不可見彩色）
     const gridTop = statsY + statsH;
     for (let i = 0; i < maxCells; i++) {
       const col = i % cols;
@@ -4950,13 +4946,17 @@ function generateResultShareCard() {
       g.shadowBlur = 12;
       g.shadowOffsetY = 4;
       roundRectPath(g, x, y, cellW, cellH, 22);
-      g.fillStyle = got ? '#fff' : 'rgba(255,255,255,0.55)';
+      g.fillStyle = got ? '#fff' : 'rgba(236,240,246,0.9)';
       g.fill();
       g.restore();
 
       const im = imgs[i];
       g.save();
-      if (!got) g.globalAlpha = 0.38;
+      if (!got) {
+        // 全灰階 + 半透明，完全看不到彩色
+        g.filter = 'grayscale(100%)';
+        g.globalAlpha = 0.42;
+      }
       if (im && im.naturalWidth) {
         const maxImgW = cellW * 0.72;
         const maxImgH = cellH * 0.52;
@@ -4965,14 +4965,16 @@ function generateResultShareCard() {
         const ih = im.naturalHeight * scale;
         g.drawImage(im, x + (cellW - iw) / 2, y + 12, iw, ih);
       } else {
-        g.fillStyle = '#c5d0e0';
+        g.fillStyle = got ? '#c5d0e0' : '#b0b8c4';
         g.font = '600 18px sans-serif';
         g.textAlign = 'center';
         g.fillText(fishTypeLabel(keys[i]).slice(0, 4), x + cellW / 2, y + cellH * 0.38);
       }
       g.restore();
+      // 確保後續繪製不受 filter 影響
+      g.filter = 'none';
+      g.globalAlpha = 1;
 
-      // 名稱小字
       g.fillStyle = got ? '#6b7c99' : '#a8b4c8';
       g.font = '500 15px "Noto Sans TC", "Segoe UI", system-ui, sans-serif';
       g.textAlign = 'center';
@@ -4991,7 +4993,7 @@ function generateResultShareCard() {
         bgad.addColorStop(1, '#7c5cbf');
         g.fillStyle = bgad;
       } else {
-        g.fillStyle = '#c5d0e0';
+        g.fillStyle = '#b8c0cc';
       }
       g.fill();
       g.fillStyle = '#fff';
@@ -6733,28 +6735,32 @@ infoBtn.addEventListener('click', () => {
     '<ol style="padding-left:1.2em;font-weight:400;font-size:0.92em;line-height:1.55;">' +
       '<li>左右移動，甩竿把東西丟進雲。</li>' +
       '<li>元氣持續下降；好魚補回，垃圾／海膽／西瓜魚會扣。</li>' +
-      '<li>1 秒內 +1000 出章魚／海龜；+1500 出榴槤魚。</li>' +
-      '<li>元氣&lt;50 → Molamola；元氣&lt;35 → 水怪魚。</li>' +
+      '<li>元氣歸零就結束。</li>' +
     '</ol>' +
     '<hr style="margin:12px 0;">' +
-    '<div style="font-weight:500;color:#4a86d8;margin-bottom:6px;font-size:0.92em;">分數／元氣</div>' +
-    infoFishRow('img/small_fish_a.png', '小魚群 · 全日', '+100／+5') +
-    infoFishRow('img/fish_a.png', '普通魚群 · 全日', '+200／+8') +
-    infoFishRow('img/fish_shi.png', '屎屎魚（5%）· 晚', '+220／+10') +
-    infoFishRow('img/fish_bird.png', '鳥仔魚（5%）· 日', '+250／+10') +
-    infoFishRow('img/seaurchin.png', '海膽（5%）· 晚', '+100／<span style="color:#e11;">-8</span>') +
-    infoFishRow('img/fish_watermelon.png', '西瓜魚（10%）· 全日', '<span style="color:#e11;">-20／-8</span>') +
-    infoFishRow('img/fish_cloud.png', '雲雲魚 · 約20秒 · 日', '+300／+12') +
-    infoFishRow('img/fish_dumpling.png', '餃子魚 · 約30秒 · 日', '+300／+12') +
-    infoFishRow('img/fish_heart.png', '心心魚 · 約30秒 · 全日', '+350／+15') +
-    infoFishRow('img/fish_dog.png', '狗狗魚 · 約30秒 · 日', '+350／+15') +
-    infoFishRow('img/fish_bear.png', '熊仔魚 · 約30秒 · 晚', '+350／+15') +
-    infoFishRow('img/molamola.png', 'Molamola（元氣&lt;50）· 全日', '+100／+50') +
-    infoFishRow('img/fish_monster.png', '水怪魚（元氣&lt;35）· 全日', '+800／+100') +
-    infoFishRow('img/octopus.png', '章魚（1秒+1000）· 晚', '+400／+20') +
-    infoFishRow('img/turtle.png', '海龜（1秒+1000）· 日', '+400／+30') +
-    infoFishRow('img/fish_durian.png', '榴槤魚（1秒+1500）· 日', '+500／+30') +
-    infoFishRow('img/can.png', '垃圾 · 全日', '0／<span style="color:#e11;">-30</span>');
+    '<div style="font-weight:500;color:#4a86d8;margin-bottom:6px;font-size:0.92em;">圖 · 名稱 · 出現時間 · 分數／元氣</div>' +
+    infoFishRow('img/small_fish_a.png', '小魚 A · 全日', '+100／+5') +
+    infoFishRow('img/small_fish_b.png', '小魚 B · 全日', '+100／+5') +
+    infoFishRow('img/small_fish_c.png', '小魚 C · 全日', '+100／+5') +
+    infoFishRow('img/fish_a.png', '魚 A · 全日', '+200／+8') +
+    infoFishRow('img/fish_b.png', '魚 B · 全日', '+200／+8') +
+    infoFishRow('img/fish_c.png', '魚 C · 全日', '+200／+8') +
+    infoFishRow('img/fish_shi.png', '屎屎魚 · 晚', '+220／+20') +
+    infoFishRow('img/fish_bird.png', '鳥仔魚 · 日', '+250／+20') +
+    infoFishRow('img/fish_dumpling.png', '餃子魚 · 日', '+300／+12') +
+    infoFishRow('img/fish_cloud.png', '雲雲魚 · 日', '+300／+12') +
+    infoFishRow('img/fish_heart.png', '心心魚 · 全日', '+350／+15') +
+    infoFishRow('img/fish_dog.png', '狗狗魚 · 日', '+350／+15') +
+    infoFishRow('img/fish_bear.png', '熊仔魚 · 晚', '+350／+15') +
+    infoFishRow('img/octopus.png', '章魚 · 晚', '+400／+20') +
+    infoFishRow('img/turtle.png', '海龜 · 日', '+400／+30') +
+    infoFishRow('img/fish_durian.png', '榴槤魚 · 日', '+500／+30') +
+    infoFishRow('img/molamola.png', 'Molamola · 全日', '+100／+50') +
+    infoFishRow('img/fish_monster.png', '水怪魚 · 全日', '+800／+100') +
+    infoFishRow('img/seaurchin.png', '海膽 · 晚', '+100／<span style="color:#e11;">-8</span>') +
+    infoFishRow('img/fish_watermelon.png', '西瓜魚 · 全日', '<span style="color:#e11;">-20／-8</span>') +
+    infoFishRow('img/can.png', '垃圾 can · 全日', '0／<span style="color:#e11;">-30</span>') +
+    infoFishRow('img/boots.png', '垃圾 boots · 全日', '0／<span style="color:#e11;">-30</span>');
   // 同步左上角小按鈕狀態
   if (typeof updateInfoTopTools === 'function') updateInfoTopTools();
 });
