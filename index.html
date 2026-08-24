@@ -3,26 +3,11 @@
 <head>
   <meta charset="UTF-8">
   <title>自稱姜太公後人 EDlui釣魚記</title>
-  <meta name="description" content="網站摘要簡介。">
-  <meta name="keywords" content="E Fishing, EDAN LUI,自稱姜太公後人 EDlui釣魚記, MIRROR, 全世界爵屎心肝椗">
-  <meta name="author" content="li_mei.art">
-  <meta name="robots" content="index,follow">
-  <meta property="og:title" content="自稱姜太公後人 EDlui釣魚記">
-  <meta property="og:description" content="EDAN LUI, MIRROR, E_fishing, 全世界爵屎心肝椗">
-  <meta property="og:type" content="website">
-  <meta property="og:url" content="https://limei25art.github.io/E_fishing/">
-  <meta property="og:image" content="https://limei25art.github.io/E_fishing/og.jpg">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="format-detection" content="telephone=no">
-  <meta name="apple-mobile-web-app-title" content="Egarden">
-  <link rel="icon" type="image/png" href="favicon/favicon-96x96.png" sizes="96x96">
-  <link rel="shortcut icon" href="favicon/favicon.ico">
-  <link rel="apple-touch-icon" sizes="180x180" href="favicon/apple-touch-icon.png">
-  <link rel="manifest" href="favicon/site.webmanifest">
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <style>
     /* ============================================================
        High-Fidelity Claymorphism Design System
@@ -2003,6 +1988,44 @@ const FISH_TYPE_IMG_SRC = {
   turtle: 'img/turtle.png', fish_durian: 'img/fish_durian.png', fish_monster: 'img/fish_monster.png',
   can: 'img/can.png', bottle: 'img/boots.png', boots: 'img/boots.png'
 };
+// 結算／分享卡專用圖（20 種；放 img/fishing-result/，缺檔則退回遊戲圖）
+const FISH_RESULT_IMG_SRC = {
+  small_0: 'img/fishing-result/small_fish_a.png',
+  small_1: 'img/fishing-result/small_fish_b.png',
+  small_2: 'img/fishing-result/small_fish_c.png',
+  mid_0: 'img/fishing-result/fish_a.png',
+  mid_1: 'img/fishing-result/fish_b.png',
+  mid_2: 'img/fishing-result/fish_c.png',
+  fish_shi: 'img/fishing-result/fish_shi.png',
+  fish_bird: 'img/fishing-result/fish_bird.png',
+  fish_dumpling: 'img/fishing-result/fish_dumpling.png',
+  fish_cloud: 'img/fishing-result/fish_cloud.png',
+  fish_heart: 'img/fishing-result/fish_heart.png',
+  fish_dog: 'img/fishing-result/fish_dog.png',
+  fish_bear: 'img/fishing-result/fish_bear.png',
+  octopus: 'img/fishing-result/octopus.png',
+  turtle: 'img/fishing-result/turtle.png',
+  fish_durian: 'img/fishing-result/fish_durian.png',
+  molamola: 'img/fishing-result/molamola.png',
+  fish_monster: 'img/fishing-result/fish_monster.png',
+  urchin: 'img/fishing-result/seaurchin.png',
+  watermelon: 'img/fishing-result/fish_watermelon.png'
+};
+const FISH_RESULT_ORDER = [
+  'small_0', 'small_1', 'small_2',
+  'mid_0', 'mid_1', 'mid_2',
+  'fish_shi', 'fish_bird',
+  'fish_dumpling', 'fish_cloud',
+  'fish_heart', 'fish_dog', 'fish_bear',
+  'octopus', 'turtle', 'fish_durian',
+  'molamola', 'fish_monster',
+  'urchin', 'watermelon'
+];
+// 未釣到：全灰階（像素級，確保匯出也完全無彩色）
+const RESULT_MISS_ALPHA = 0.40;
+const RESULT_MISS_CELL_BG = 'rgba(228,232,238,0.98)';
+const RESULT_MISS_BADGE_BG = '#9aa3b0';
+const RESULT_MISS_NAME_COLOR = '#9aa3b0';
 function recordCatch(typeKey, pts) {
   if (!typeKey) return;
   collectedFishCounts[typeKey] = (collectedFishCounts[typeKey] || 0) + 1;
@@ -2015,6 +2038,57 @@ function fishTypeLabel(key) {
 }
 function fishTypeImgSrc(key) {
   return FISH_TYPE_IMG_SRC[key] || '';
+}
+function fishResultImgSrc(key) {
+  return FISH_RESULT_IMG_SRC[key] || FISH_TYPE_IMG_SRC[key] || '';
+}
+function loadResultShareImage(key) {
+  const primary = FISH_RESULT_IMG_SRC[key];
+  const fallback = FISH_TYPE_IMG_SRC[key];
+  if (!primary && !fallback) return Promise.resolve(null);
+  if (!primary) return loadShareImage(fallback);
+  return loadShareImage(primary).then(function(im) {
+    if (im) return im;
+    return fallback ? loadShareImage(fallback) : null;
+  });
+}
+/**
+ * 把圖片畫成「完全灰階」（像素處理，不依賴 CSS filter，匯出 PNG 也無彩色）
+ */
+function drawImageFullyGray(g, im, dx, dy, dw, dh, alpha) {
+  const tw = Math.max(1, Math.round(dw));
+  const th = Math.max(1, Math.round(dh));
+  const tc = document.createElement('canvas');
+  tc.width = tw;
+  tc.height = th;
+  const tctx = tc.getContext('2d');
+  tctx.drawImage(im, 0, 0, tw, th);
+  try {
+    const id = tctx.getImageData(0, 0, tw, th);
+    const d = id.data;
+    for (let i = 0; i < d.length; i += 4) {
+      // ITU-R BT.601 亮度，寫回 R=G=B → 純灰
+      const y = (0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2]) | 0;
+      d[i] = y;
+      d[i + 1] = y;
+      d[i + 2] = y;
+      // alpha 通道保留原圖透明度，再由外層 globalAlpha 控制整體淡化
+    }
+    tctx.putImageData(id, 0, 0);
+  } catch (e) {
+    // 跨域污染時退回 CSS filter
+    g.save();
+    g.filter = 'grayscale(100%)';
+    g.globalAlpha = alpha != null ? alpha : 1;
+    g.drawImage(im, dx, dy, dw, dh);
+    g.restore();
+    g.filter = 'none';
+    return;
+  }
+  g.save();
+  g.globalAlpha = alpha != null ? alpha : 1;
+  g.drawImage(tc, dx, dy);
+  g.restore();
 }
 
 // —— 得分飄字特效（依分數分級）——
@@ -4745,37 +4819,55 @@ function loadShareImage(src) {
  */
 function generateResultShareCard() {
   const W = 1080;
-  const keys = Object.keys(collectedFishCounts);
-  keys.sort(function(a, b) {
+  // 固定 20 種魚：有釣到的優先，其餘依 FISH_RESULT_ORDER
+  const caughtKeys = Object.keys(collectedFishCounts).filter(function(k) {
+    return FISH_RESULT_ORDER.indexOf(k) >= 0 && (collectedFishCounts[k] || 0) > 0;
+  });
+  caughtKeys.sort(function(a, b) {
     return (collectedFishCounts[b] || 0) - (collectedFishCounts[a] || 0);
   });
+  const keys = [];
+  const seen = {};
+  for (let i = 0; i < caughtKeys.length; i++) {
+    keys.push(caughtKeys[i]);
+    seen[caughtKeys[i]] = true;
+  }
+  for (let i = 0; i < FISH_RESULT_ORDER.length; i++) {
+    const k = FISH_RESULT_ORDER[i];
+    if (!seen[k]) keys.push(k);
+  }
   let totalFish = 0;
-  for (let i = 0; i < keys.length; i++) totalFish += collectedFishCounts[keys[i]] || 0;
+  let typeCaught = 0;
+  for (let i = 0; i < FISH_RESULT_ORDER.length; i++) {
+    const n = collectedFishCounts[FISH_RESULT_ORDER[i]] || 0;
+    totalFish += n;
+    if (n > 0) typeCaught++;
+  }
   const playTime = formatPlayTime(elapsedGameTime);
 
-  // —— 先算版面：全部魚獲、高度隨內容變化 ——
+  // —— 版面：固定 20 格（4×5）——
   const cardX = 56, cardY = 56, cardW = W - 112;
   const gridPad = 36;
   const gridLeft = cardX + gridPad;
   const gridW = cardW - gridPad * 2;
-  const maxCells = keys.length; // 全部列出
-  const cols = maxCells <= 0 ? 1 : (maxCells <= 4 ? Math.max(1, maxCells) : (maxCells <= 9 ? 3 : 4));
+  const maxCells = keys.length;
+  const cols = 4;
   const rows = Math.max(1, Math.ceil(Math.max(1, maxCells) / cols));
-  const gap = 16;
+  const gap = 14;
   const cellW = (gridW - gap * (cols - 1)) / cols;
-  const cellH = Math.min(188, Math.max(140, cellW * 1.02));
+  const cellH = Math.min(168, Math.max(128, cellW * 0.98));
 
-  const headerH = 150; // 兩排標題色帶
-  const scoreBlockH = 210; // EDAN + 分數區
+  const headerH = 150;
+  const scoreBlockH = 210;
   const statsH = 90;
   const gridTopOff = 24;
   const gridH = maxCells === 0 ? 140 : (rows * cellH + (rows - 1) * gap);
   const footerPad = 72;
   const cardInner = headerH + scoreBlockH + statsH + gridTopOff + gridH + 40;
   const cardH = Math.max(900, cardInner);
-  const H = cardY + cardH + footerPad + 36; // 整圖高度可變
+  const H = cardY + cardH + footerPad + 36;
 
-  const loads = keys.map(function(k) { return loadShareImage(fishTypeImgSrc(k)); });
+  const loads = keys.map(function(k) { return loadResultShareImage(k); });
   loads.push(loadShareImage('img/EDAN.png'));
   return Promise.all(loads).then(function(allImgs) {
     const edanImg = allImgs[allImgs.length - 1];
@@ -4866,7 +4958,7 @@ function generateResultShareCard() {
     const statsY = cardY + headerH + scoreBlockH;
     const statItems = [
       { label: '時間', value: playTime },
-      { label: '種類', value: keys.length + ' 種' },
+      { label: '種類', value: typeCaught + '／20' },
       { label: '總隻', value: totalFish + ' 隻' },
       { label: '垃圾', value: String(trashCaughtCount) }
     ];
@@ -4882,61 +4974,72 @@ function generateResultShareCard() {
       g.fillText(statItems[i].value, cx, statsY + 36);
     }
 
-    // 全部魚獲 grid
+    // 20 種魚 grid：未釣到 = 全灰階 + 半透明（不可見彩色）
     const gridTop = statsY + statsH;
-    if (maxCells === 0) {
-      g.fillStyle = '#8a9bb5';
-      g.font = '500 28px "Noto Sans TC", "Segoe UI", system-ui, sans-serif';
-      g.textAlign = 'center';
-      g.fillText('本局尚未釣到魚…下次加油！', W / 2, gridTop + 80);
-    }
-
     for (let i = 0; i < maxCells; i++) {
       const col = i % cols;
       const row = Math.floor(i / cols);
       const x = gridLeft + col * (cellW + gap);
       const y = gridTop + row * (cellH + gap);
+      const n = collectedFishCounts[keys[i]] || 0;
+      const got = n > 0;
 
       g.save();
       g.shadowColor = 'rgba(80,110,170,0.12)';
       g.shadowBlur = 12;
       g.shadowOffsetY = 4;
       roundRectPath(g, x, y, cellW, cellH, 22);
-      g.fillStyle = '#fff';
+      g.fillStyle = got ? '#fff' : RESULT_MISS_CELL_BG;
       g.fill();
       g.restore();
 
       const im = imgs[i];
-      const n = collectedFishCounts[keys[i]] || 0;
       if (im && im.naturalWidth) {
         const maxImgW = cellW * 0.72;
-        const maxImgH = cellH * 0.55;
+        const maxImgH = cellH * 0.52;
         const scale = Math.min(maxImgW / im.naturalWidth, maxImgH / im.naturalHeight);
         const iw = im.naturalWidth * scale;
         const ih = im.naturalHeight * scale;
-        g.drawImage(im, x + (cellW - iw) / 2, y + 14, iw, ih);
+        const dx = x + (cellW - iw) / 2;
+        const dy = y + 12;
+        if (got) {
+          g.drawImage(im, dx, dy, iw, ih);
+        } else {
+          // 像素級全灰階 → 匯出／預覽都不會出現彩色
+          drawImageFullyGray(g, im, dx, dy, iw, ih, RESULT_MISS_ALPHA);
+        }
       } else {
-        g.fillStyle = '#c5d0e0';
-        g.font = '600 22px sans-serif';
+        g.fillStyle = got ? '#c5d0e0' : RESULT_MISS_BADGE_BG;
+        g.font = '600 18px sans-serif';
         g.textAlign = 'center';
-        g.fillText(fishTypeLabel(keys[i]).slice(0, 4), x + cellW / 2, y + cellH * 0.4);
+        g.fillText(fishTypeLabel(keys[i]).slice(0, 4), x + cellW / 2, y + cellH * 0.38);
       }
 
+      g.fillStyle = got ? '#6b7c99' : RESULT_MISS_NAME_COLOR;
+      g.font = '500 15px "Noto Sans TC", "Segoe UI", system-ui, sans-serif';
+      g.textAlign = 'center';
+      g.textBaseline = 'middle';
+      g.fillText(fishTypeLabel(keys[i]), x + cellW / 2, y + cellH - 52);
+
       const badge = '×' + n;
-      g.font = '700 26px "Noto Sans TC", "Segoe UI", system-ui, sans-serif';
-      const bw = g.measureText(badge).width + 28;
+      g.font = '700 22px "Noto Sans TC", "Segoe UI", system-ui, sans-serif';
+      const bw = g.measureText(badge).width + 24;
       const bx = x + (cellW - bw) / 2;
-      const by = y + cellH - 46;
-      roundRectPath(g, bx, by, bw, 34, 17);
-      const bgad = g.createLinearGradient(bx, by, bx + bw, by);
-      bgad.addColorStop(0, '#5b9cf5');
-      bgad.addColorStop(1, '#7c5cbf');
-      g.fillStyle = bgad;
+      const by = y + cellH - 38;
+      roundRectPath(g, bx, by, bw, 28, 14);
+      if (got) {
+        const bgad = g.createLinearGradient(bx, by, bx + bw, by);
+        bgad.addColorStop(0, '#5b9cf5');
+        bgad.addColorStop(1, '#7c5cbf');
+        g.fillStyle = bgad;
+      } else {
+        g.fillStyle = RESULT_MISS_BADGE_BG;
+      }
       g.fill();
       g.fillStyle = '#fff';
       g.textAlign = 'center';
       g.textBaseline = 'middle';
-      g.fillText(badge, x + cellW / 2, by + 17);
+      g.fillText(badge, x + cellW / 2, by + 14);
     }
 
     // 底欄
