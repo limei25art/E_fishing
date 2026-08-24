@@ -2021,11 +2021,9 @@ const FISH_RESULT_ORDER = [
   'molamola', 'fish_monster',
   'urchin', 'watermelon'
 ];
-// 未釣到：全灰階 + 半透明（可調）
-// grayscalePct: 100 = 完全無彩色；alpha: 越小越淡
-const RESULT_MISS_GRAYSCALE_PCT = 100;
-const RESULT_MISS_ALPHA = 0.32;
-const RESULT_MISS_CELL_BG = 'rgba(230,234,240,0.95)';
+// 未釣到：全灰階（像素級，確保匯出也完全無彩色）
+const RESULT_MISS_ALPHA = 0.40;
+const RESULT_MISS_CELL_BG = 'rgba(228,232,238,0.98)';
 const RESULT_MISS_BADGE_BG = '#9aa3b0';
 const RESULT_MISS_NAME_COLOR = '#9aa3b0';
 function recordCatch(typeKey, pts) {
@@ -2053,6 +2051,44 @@ function loadResultShareImage(key) {
     if (im) return im;
     return fallback ? loadShareImage(fallback) : null;
   });
+}
+/**
+ * 把圖片畫成「完全灰階」（像素處理，不依賴 CSS filter，匯出 PNG 也無彩色）
+ */
+function drawImageFullyGray(g, im, dx, dy, dw, dh, alpha) {
+  const tw = Math.max(1, Math.round(dw));
+  const th = Math.max(1, Math.round(dh));
+  const tc = document.createElement('canvas');
+  tc.width = tw;
+  tc.height = th;
+  const tctx = tc.getContext('2d');
+  tctx.drawImage(im, 0, 0, tw, th);
+  try {
+    const id = tctx.getImageData(0, 0, tw, th);
+    const d = id.data;
+    for (let i = 0; i < d.length; i += 4) {
+      // ITU-R BT.601 亮度，寫回 R=G=B → 純灰
+      const y = (0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2]) | 0;
+      d[i] = y;
+      d[i + 1] = y;
+      d[i + 2] = y;
+      // alpha 通道保留原圖透明度，再由外層 globalAlpha 控制整體淡化
+    }
+    tctx.putImageData(id, 0, 0);
+  } catch (e) {
+    // 跨域污染時退回 CSS filter
+    g.save();
+    g.filter = 'grayscale(100%)';
+    g.globalAlpha = alpha != null ? alpha : 1;
+    g.drawImage(im, dx, dy, dw, dh);
+    g.restore();
+    g.filter = 'none';
+    return;
+  }
+  g.save();
+  g.globalAlpha = alpha != null ? alpha : 1;
+  g.drawImage(tc, dx, dy);
+  g.restore();
 }
 
 // —— 得分飄字特效（依分數分級）——
@@ -4958,28 +4994,26 @@ function generateResultShareCard() {
       g.restore();
 
       const im = imgs[i];
-      g.save();
-      if (!got) {
-        // 全灰階 + 半透明（參數見 RESULT_MISS_*）
-        g.filter = 'grayscale(' + RESULT_MISS_GRAYSCALE_PCT + '%)';
-        g.globalAlpha = RESULT_MISS_ALPHA;
-      }
       if (im && im.naturalWidth) {
         const maxImgW = cellW * 0.72;
         const maxImgH = cellH * 0.52;
         const scale = Math.min(maxImgW / im.naturalWidth, maxImgH / im.naturalHeight);
         const iw = im.naturalWidth * scale;
         const ih = im.naturalHeight * scale;
-        g.drawImage(im, x + (cellW - iw) / 2, y + 12, iw, ih);
+        const dx = x + (cellW - iw) / 2;
+        const dy = y + 12;
+        if (got) {
+          g.drawImage(im, dx, dy, iw, ih);
+        } else {
+          // 像素級全灰階 → 匯出／預覽都不會出現彩色
+          drawImageFullyGray(g, im, dx, dy, iw, ih, RESULT_MISS_ALPHA);
+        }
       } else {
         g.fillStyle = got ? '#c5d0e0' : RESULT_MISS_BADGE_BG;
         g.font = '600 18px sans-serif';
         g.textAlign = 'center';
         g.fillText(fishTypeLabel(keys[i]).slice(0, 4), x + cellW / 2, y + cellH * 0.38);
       }
-      g.restore();
-      g.filter = 'none';
-      g.globalAlpha = 1;
 
       g.fillStyle = got ? '#6b7c99' : RESULT_MISS_NAME_COLOR;
       g.font = '500 15px "Noto Sans TC", "Segoe UI", system-ui, sans-serif';
