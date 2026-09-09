@@ -276,7 +276,7 @@
     }
 
     /* ---------- Top action buttons（縮小） ---------- */
-    #infoBtn, #paramPanelBtn {
+    #infoBtn, #paramPanelBtn, #rankBtn {
       display: inline-flex;
       align-items: center;
       justify-content: center;
@@ -297,11 +297,18 @@
       transition: transform 0.18s cubic-bezier(0.34, 1.45, 0.64, 1), box-shadow 0.18s ease;
       -webkit-tap-highlight-color: transparent;
     }
-    #infoBtn:hover, #paramPanelBtn:hover {
+    #rankBtn {
+      font-style: normal;
+      font-family: 'Noto Sans TC', 'Segoe UI', system-ui, sans-serif;
+      font-size: 12px;
+      letter-spacing: 0.02em;
+      background: linear-gradient(155deg, #ffe08a 0%, var(--clay-amber) 45%, var(--clay-amber-deep) 100%);
+    }
+    #infoBtn:hover, #paramPanelBtn:hover, #rankBtn:hover {
       transform: translateY(-4px) scale(1.07);
       box-shadow: var(--shadow-clay-hover);
     }
-    #infoBtn:active, #paramPanelBtn:active {
+    #infoBtn:active, #paramPanelBtn:active, #rankBtn:active {
       transform: scale(0.90);
       box-shadow: var(--shadow-clay-pressed);
     }
@@ -435,7 +442,7 @@
     }
 
     /* ---------- Modals (clay cards) ---------- */
-    #infoModal, #gameOverModal {
+    #infoModal, #gameOverModal, #rankModal {
       position: absolute;
       top: 0; left: 0; right: 0; bottom: 0;
       background: rgba(60, 80, 120, 0.45);
@@ -446,6 +453,144 @@
       align-items: center;
       justify-content: center;
       padding: 16px;
+    }
+
+    /* ---------- 排行榜 ---------- */
+    #rankModal .modal-content {
+      max-width: 360px;
+      width: 90%;
+      max-height: min(86vh, 720px);
+      display: flex;
+      flex-direction: column;
+      padding: 22px 16px 16px;
+    }
+    #rankModal .rank-list-wrap {
+      flex: 1 1 auto;
+      min-height: 0;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      margin: 4px 0 10px;
+    }
+    .rank-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px;
+      margin-bottom: 8px;
+      border-radius: var(--clay-radius);
+      background: linear-gradient(160deg, #ffffff 0%, var(--clay-surface) 100%);
+      box-shadow:
+        inset 1px 2px 6px rgba(90, 120, 180, 0.08),
+        2px 3px 8px rgba(90, 120, 180, 0.08);
+      border: 1px solid rgba(255,255,255,0.9);
+    }
+    .rank-row.is-me {
+      background: linear-gradient(160deg, #fff8e8 0%, #ffe9b8 100%);
+      border: 1.5px solid rgba(240, 168, 32, 0.45);
+      box-shadow:
+        0 0 0 2px rgba(255, 193, 77, 0.25),
+        3px 4px 12px rgba(210, 140, 30, 0.18);
+    }
+    .rank-row .rank-pos {
+      flex: 0 0 28px;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 0.82em;
+      color: #fff;
+      background: linear-gradient(155deg, #9ad0ff 0%, #4a86d8 100%);
+      box-shadow: 2px 2px 6px rgba(74, 134, 216, 0.3);
+    }
+    .rank-row.rank-1 .rank-pos {
+      background: linear-gradient(155deg, #ffe08a 0%, #f0a820 100%);
+      box-shadow: 2px 2px 8px rgba(240, 168, 32, 0.4);
+    }
+    .rank-row.rank-2 .rank-pos {
+      background: linear-gradient(155deg, #e8eef8 0%, #9aa8c0 100%);
+    }
+    .rank-row.rank-3 .rank-pos {
+      background: linear-gradient(155deg, #f5c9a8 0%, #c87840 100%);
+    }
+    .rank-row .rank-main {
+      flex: 1;
+      min-width: 0;
+    }
+    .rank-row .rank-score {
+      font-weight: 800;
+      font-size: 1.05em;
+      color: var(--clay-blue-deep);
+      letter-spacing: 0.02em;
+    }
+    .rank-row .rank-meta {
+      font-size: 0.72em;
+      color: var(--clay-text-soft);
+      margin-top: 2px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .rank-empty {
+      text-align: center;
+      padding: 28px 12px;
+      color: var(--clay-text-soft);
+      font-size: 0.92em;
+      line-height: 1.6;
+    }
+    .rank-footer-hint {
+      font-size: 0.72em;
+      color: var(--clay-text-soft);
+      text-align: center;
+      margin-bottom: 8px;
+      opacity: 0.85;
+    }
+    #gameOverRankBtn {
+      flex: 1;
+      padding: 12px 14px;
+      border: 2px solid rgba(255, 232, 180, 0.9);
+      border-radius: var(--clay-radius-pill);
+      cursor: pointer;
+      font-size: 0.95em;
+      font-weight: 800;
+      letter-spacing: 0.04em;
+      color: #fff;
+      background: linear-gradient(155deg, #ffe08a 0%, var(--clay-amber) 42%, var(--clay-amber-deep) 100%);
+      box-shadow: var(--shadow-clay-amber);
+      text-shadow: 0 1px 0 rgba(90, 50, 0, 0.25);
+      -webkit-tap-highlight-color: transparent;
+    }
+    #gameOverRankBtn:active {
+      transform: scale(0.94);
+      box-shadow: var(--shadow-clay-pressed);
+    }
+    #gameOverModalContent .game-over-footer {
+      display: flex;
+      gap: 10px;
+      align-items: stretch;
+    }
+    #gameOverModalContent .game-over-footer #gameOverRestartBtn {
+      flex: 1;
+      width: auto;
+    }
+    .go-rank-chip {
+      margin: 10px 0 4px;
+      padding: 10px 12px;
+      border-radius: var(--clay-radius);
+      background: linear-gradient(160deg, #fff8e8 0%, #ffe9b8 100%);
+      border: 1.5px solid rgba(240, 168, 32, 0.35);
+      text-align: center;
+      font-weight: 700;
+      font-size: 0.92em;
+      color: #b07010;
+      letter-spacing: 0.04em;
+    }
+    .go-rank-chip .go-rank-num {
+      font-size: 1.2em;
+      font-weight: 900;
+      color: #d4880a;
     }
 
     .modal-content {
@@ -679,15 +824,19 @@
     }
     #gameOverModalContent .game-over-footer {
       flex: 0 0 auto;
+      display: flex;
+      gap: 10px;
+      align-items: stretch;
       padding-top: 12px;
       margin-top: 4px;
       border-top: 1px solid rgba(120, 150, 200, 0.14);
     }
-    #gameOverModalContent .game-over-footer #gameOverRestartBtn {
-      width: 100%;
-      flex: none;
-      padding: 12px 18px;
-      font-size: 1em;
+    #gameOverModalContent .game-over-footer #gameOverRestartBtn,
+    #gameOverModalContent .game-over-footer #gameOverRankBtn {
+      flex: 1;
+      width: auto;
+      padding: 12px 14px;
+      font-size: 0.95em;
     }
     #resultShareWrap {
       margin: 14px 0 4px;
@@ -1225,10 +1374,30 @@
             <button type="button" id="resultShareBtn" title="分享">分享</button>
           </div>
         </div>
+        <!-- 線上排行榜上傳 -->
+        <div id="lbSubmitWrap" style="margin:12px 0 4px;text-align:center;">
+          <div class="result-share-label" style="margin-bottom:8px;">上傳到線上排行榜</div>
+          <div style="display:flex;gap:8px;align-items:center;justify-content:center;flex-wrap:wrap;">
+            <input type="text" id="lbPlayerName" maxlength="16" placeholder="輸入暱稱（最多16字）" style="flex:1;min-width:120px;max-width:180px;padding:10px 12px;border:none;border-radius:999px;font-size:0.92em;font-weight:600;color:var(--clay-text);background:#fff;box-shadow:inset 1px 2px 6px rgba(90,120,180,0.12);outline:none;">
+            <button type="button" id="lbSubmitBtn" class="info-set-btn" style="min-width:88px;padding:10px 16px;">上傳</button>
+          </div>
+          <div id="lbSubmitStatus" style="font-size:0.78em;color:var(--clay-text-soft);margin-top:6px;min-height:1.2em;"></div>
+        </div>
       </div>
       <div class="game-over-footer">
+        <button type="button" id="gameOverRankBtn" title="排行榜">排行榜</button>
         <button id="gameOverRestartBtn">重新開始</button>
       </div>
+    </div>
+  </div>
+  <!-- 排行榜 POPUP -->
+  <div id="rankModal" style="display:none;">
+    <div class="modal-content">
+      <button id="closeRankModal" class="modal-close-x" title="關閉">×</button>
+      <h2>排行榜</h2>
+      <div class="rank-footer-hint">線上全球榜 · 依得分排序（最多 50 名）</div>
+      <div class="rank-list-wrap" id="rankList"><div class="rank-empty">載入中…</div></div>
+      <button type="button" id="rankRefreshBtn" class="info-set-btn" style="width:100%;margin-top:4px;">重新整理</button>
     </div>
   </div>
   <!-- 調參面板：靠右側的側邊面板（不是全螢幕遮罩），開啟時遊戲仍會繼續運作，
@@ -1253,6 +1422,7 @@
   </div>
   <div class="btn-row">
     <button id="infoBtn" title="遊戲說明">i</button>
+    <button type="button" id="rankBtn" title="排行榜">🏆</button>
     <button type="button" id="ytUnmuteBtn" title="海影聲音" aria-pressed="false"><img src="img/icon_speaker_OFF.png" alt="海影聲音" width="22" height="22"></button>
   </div>
   <div id="joystick" >
@@ -5122,6 +5292,218 @@ async function shareResultShare() {
   downloadResultShare();
 }
 
+// ============================================================
+// ============================================================
+// 線上排行榜（SimpleBoards API）
+// POST https://api.simpleboards.dev/api/entries
+// GET  https://api.simpleboards.dev/api/leaderboards/{id}/entries
+// ============================================================
+const SB_API_KEY = '14931374-1c18-45a2-a4d8-11284128f1bf';
+const SB_LEADERBOARD_ID = 'cff6b6c7-6fb8-4ad1-8a13-08df0ddede9d';
+const SB_API_BASE = 'https://api.simpleboards.dev/api';
+const PLAYER_NAME_KEY = 'efishing_player_name_v1';
+const PLAYER_ID_KEY = 'efishing_player_id_v1';
+let lastSubmittedScore = null; // 本局是否已上傳
+let lastLeaderboardEntryId = null;
+
+function getOrCreatePlayerId() {
+  try {
+    let id = localStorage.getItem(PLAYER_ID_KEY);
+    if (id && id.length > 4) return id;
+    id = 'p_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 10);
+    localStorage.setItem(PLAYER_ID_KEY, id);
+    return id;
+  } catch (e) {
+    return 'p_anon_' + Date.now();
+  }
+}
+
+function loadSavedPlayerName() {
+  try {
+    return localStorage.getItem(PLAYER_NAME_KEY) || '';
+  } catch (e) {
+    return '';
+  }
+}
+
+function savePlayerName(name) {
+  try {
+    localStorage.setItem(PLAYER_NAME_KEY, name);
+  } catch (e) { /* ignore */ }
+}
+
+function formatRankDate(iso) {
+  try {
+    const d = new Date(iso);
+    if (isNaN(d.getTime())) return '';
+    const m = d.getMonth() + 1;
+    const day = d.getDate();
+    const hh = String(d.getHours()).padStart(2, '0');
+    const mm = String(d.getMinutes()).padStart(2, '0');
+    return m + '/' + day + ' ' + hh + ':' + mm;
+  } catch (e) {
+    return '';
+  }
+}
+
+/** 上傳分數到 SimpleBoards */
+async function submitOnlineScore(playerDisplayName, scoreVal, metadataObj) {
+  const body = {
+    leaderboardId: SB_LEADERBOARD_ID,
+    playerId: getOrCreatePlayerId(),
+    playerDisplayName: String(playerDisplayName || '匿名').slice(0, 32),
+    score: String(Math.max(0, scoreVal | 0)),
+    metadata: metadataObj ? JSON.stringify(metadataObj) : ''
+  };
+  const res = await fetch(SB_API_BASE + '/entries', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': SB_API_KEY
+    },
+    body: JSON.stringify(body)
+  });
+  if (!res.ok) {
+    const t = await res.text().catch(function() { return ''; });
+    throw new Error('上傳失敗 (' + res.status + ') ' + t.slice(0, 80));
+  }
+  const data = await res.json().catch(function() { return null; });
+  return data;
+}
+
+/** 拉取線上排行榜 */
+async function fetchOnlineLeaderboard() {
+  const res = await fetch(
+    SB_API_BASE + '/leaderboards/' + encodeURIComponent(SB_LEADERBOARD_ID) + '/entries',
+    {
+      method: 'GET',
+      headers: { 'x-api-key': SB_API_KEY }
+    }
+  );
+  if (!res.ok) {
+    throw new Error('讀取排行榜失敗 (' + res.status + ')');
+  }
+  const data = await res.json();
+  // 可能是陣列，或 { entries: [...] }
+  let list = Array.isArray(data) ? data : (data && Array.isArray(data.entries) ? data.entries : []);
+  // 依分數降冪排序（API 通常已排好，再保險一次）
+  list = list.slice().sort(function(a, b) {
+    const sa = parseInt(a.score, 10) || 0;
+    const sb = parseInt(b.score, 10) || 0;
+    return sb - sa;
+  });
+  return list.slice(0, 50);
+}
+
+function renderOnlineRankList(entries, highlightId) {
+  const listEl = document.getElementById('rankList');
+  if (!listEl) return;
+  if (!entries || !entries.length) {
+    listEl.innerHTML = '<div class="rank-empty">尚無紀錄<br>結束一局後輸入暱稱上傳即可上榜</div>';
+    return;
+  }
+  const myId = getOrCreatePlayerId();
+  let html = '';
+  for (let i = 0; i < entries.length; i++) {
+    const e = entries[i];
+    const pos = i + 1;
+    const sc = parseInt(e.score, 10) || 0;
+    const name = (e.playerDisplayName || e.playerId || '匿名').slice(0, 16);
+    const isMe = (e.playerId && e.playerId === myId) || (highlightId && e.id === highlightId);
+    const cls = 'rank-row' +
+      (pos <= 3 ? ' rank-' + pos : '') +
+      (isMe ? ' is-me' : '');
+    let meta = name;
+    try {
+      if (e.metadata) {
+        const m = typeof e.metadata === 'string' ? JSON.parse(e.metadata) : e.metadata;
+        if (m && m.playTime) meta += ' · ' + m.playTime;
+      }
+    } catch (err) { /* ignore */ }
+    html +=
+      '<div class="' + cls + '">' +
+        '<div class="rank-pos">' + pos + '</div>' +
+        '<div class="rank-main">' +
+          '<div class="rank-score">' + sc + ' <span style="font-size:0.7em;font-weight:600;">pt</span>' +
+            (isMe ? ' <span style="font-size:0.65em;color:#d4880a;">我</span>' : '') +
+          '</div>' +
+          '<div class="rank-meta">' + meta + '</div>' +
+        '</div>' +
+      '</div>';
+  }
+  listEl.innerHTML = html;
+}
+
+async function showRankModal(highlightId) {
+  const modal = document.getElementById('rankModal');
+  if (!modal) return;
+  modal.style.display = 'flex';
+  const listEl = document.getElementById('rankList');
+  if (listEl) listEl.innerHTML = '<div class="rank-empty">載入中…</div>';
+  if (typeof sfx === 'function') sfx('ui_click', { throttleMs: 80 });
+  try {
+    const entries = await fetchOnlineLeaderboard();
+    renderOnlineRankList(entries, highlightId || lastLeaderboardEntryId);
+  } catch (err) {
+    if (listEl) {
+      listEl.innerHTML = '<div class="rank-empty">無法載入排行榜<br>' +
+        (err && err.message ? err.message : '請檢查網路後重試') + '</div>';
+    }
+  }
+}
+
+function hideRankModal() {
+  const modal = document.getElementById('rankModal');
+  if (modal) modal.style.display = 'none';
+}
+
+function setLbSubmitStatus(msg, isError) {
+  const el = document.getElementById('lbSubmitStatus');
+  if (!el) return;
+  el.textContent = msg || '';
+  el.style.color = isError ? 'var(--clay-coral)' : 'var(--clay-mint-deep)';
+}
+
+async function handleLbSubmit() {
+  const nameInput = document.getElementById('lbPlayerName');
+  const btn = document.getElementById('lbSubmitBtn');
+  if (!nameInput || !btn) return;
+  let name = (nameInput.value || '').trim();
+  if (!name) {
+    setLbSubmitStatus('請輸入暱稱', true);
+    nameInput.focus();
+    return;
+  }
+  if (lastSubmittedScore === score) {
+    setLbSubmitStatus('本局已上傳過', false);
+    return;
+  }
+  name = name.slice(0, 16);
+  savePlayerName(name);
+  btn.disabled = true;
+  setLbSubmitStatus('上傳中…', false);
+  try {
+    const meta = {
+      playTime: formatPlayTime(elapsedGameTime),
+      playSec: Math.round(elapsedGameTime),
+      fishTypes: Object.keys(collectedFishCounts).length,
+      totalFish: Object.keys(collectedFishCounts).reduce(function(s, k) {
+        return s + (collectedFishCounts[k] || 0);
+      }, 0),
+      trash: trashCaughtCount
+    };
+    const data = await submitOnlineScore(name, score, meta);
+    lastSubmittedScore = score;
+    if (data && data.id) lastLeaderboardEntryId = data.id;
+    setLbSubmitStatus('上傳成功！可到排行榜查看', false);
+    if (typeof sfx === 'function') sfx('score_mid', { throttleMs: 100 });
+  } catch (err) {
+    setLbSubmitStatus(err && err.message ? err.message : '上傳失敗', true);
+  } finally {
+    btn.disabled = false;
+  }
+}
+
 function showGameOverModal() {
   const modal = document.getElementById('gameOverModal');
   const statsEl = document.getElementById('gameOverStats');
@@ -5132,18 +5514,17 @@ function showGameOverModal() {
   }
   const goAnim = document.getElementById('gameOverAnim');
   if (goAnim) goAnim.dataset.sfxDone = '';
+  lastSubmittedScore = null;
   const keys = Object.keys(collectedFishCounts);
   const fishTypeCount = keys.length;
   let totalFishCaught = 0;
   for (let i = 0; i < keys.length; i++) {
     totalFishCaught += collectedFishCounts[keys[i]];
   }
-  // 釣獲列表只顯示數量，依數量由多到少
   keys.sort(function(a, b) {
     return (collectedFishCounts[b] || 0) - (collectedFishCounts[a] || 0);
   });
   const playTime = formatPlayTime(elapsedGameTime);
-  // 結果文字與 title 同系深藍
   const cLabel = '#8b95a8';
   const cVal = '#8b7cb8';
   const rowStyle = 'display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid rgba(26,58,110,0.12);padding:7px 2px;gap:8px;font-weight:400;';
@@ -5178,6 +5559,14 @@ function showGameOverModal() {
       '<div style="font-weight:600;color:' + cVal + ';margin-bottom:6px;letter-spacing:0.06em;font-size:0.92em;">釣獲列表</div>' +
       listHtml +
     '</div>';
+  // 預填暱稱
+  const nameInput = document.getElementById('lbPlayerName');
+  if (nameInput) {
+    nameInput.value = loadSavedPlayerName();
+  }
+  setLbSubmitStatus('', false);
+  const submitBtn = document.getElementById('lbSubmitBtn');
+  if (submitBtn) submitBtn.disabled = false;
   modal.style.display = 'flex';
 
   // 產生分享 Grid 圖
@@ -5190,6 +5579,7 @@ function showGameOverModal() {
 function hideGameOverModal() {
   const modal = document.getElementById('gameOverModal');
   if (modal) modal.style.display = 'none';
+  hideRankModal();
 }
 
 // 魚／垃圾／特殊海洋生物出生時的「最高路徑」高度，跟著海平面高度參數走
@@ -6870,6 +7260,69 @@ if (gameOverRestartBtn) {
     doRestartGame();
   };
 }
+// 排行榜：右上角 🏆、結算「排行榜」、關閉／清除
+(function bindRankUi() {
+  const rankBtn = document.getElementById('rankBtn');
+  const goRankBtn = document.getElementById('gameOverRankBtn');
+  const closeRank = document.getElementById('closeRankModal');
+  const rankModal = document.getElementById('rankModal');
+  const refreshBtn = document.getElementById('rankRefreshBtn');
+  if (rankBtn) {
+    rankBtn.addEventListener('click', function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      showRankModal(lastLeaderboardEntryId);
+    });
+  }
+  if (goRankBtn) {
+    goRankBtn.addEventListener('click', function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      showRankModal(lastLeaderboardEntryId);
+    });
+  }
+  if (closeRank) {
+    closeRank.addEventListener('click', function() {
+      hideRankModal();
+      if (typeof sfx === 'function') sfx('ui_click', { throttleMs: 80 });
+    });
+  }
+  if (rankModal) {
+    rankModal.addEventListener('click', function(e) {
+      if (e.target === rankModal) hideRankModal();
+    });
+  }
+  if (refreshBtn) {
+    refreshBtn.addEventListener('click', function(e) {
+      e.preventDefault();
+      showRankModal(lastLeaderboardEntryId);
+      if (typeof sfx === 'function') sfx('ui_click', { throttleMs: 80 });
+    });
+  }
+  // 上傳按鈕
+  const lbSubmitBtn = document.getElementById('lbSubmitBtn');
+  if (lbSubmitBtn) {
+    lbSubmitBtn.addEventListener('click', function(e) {
+      e.preventDefault();
+      handleLbSubmit();
+    });
+  }
+  const lbNameInput = document.getElementById('lbPlayerName');
+  if (lbNameInput) {
+    lbNameInput.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        handleLbSubmit();
+      }
+    });
+  }
+  window.addEventListener('keydown', function(e) {
+    if (!rankModal || rankModal.style.display !== 'flex') return;
+    if (e.key === 'Escape' || e.key === 'Esc') {
+      hideRankModal();
+    }
+  });
+})();
 // 分享卡片：分享／下載
 (function bindResultShareBtns() {
   const shareBtn = document.getElementById('resultShareBtn');
