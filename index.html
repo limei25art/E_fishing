@@ -226,9 +226,10 @@
     }
     #ytUnmuteBtn img {
       display: block;
-      width: 22px;
-      height: 22px;
+      width: 20px;
+      height: 20px;
       object-fit: contain;
+      filter: brightness(0) invert(1);
       pointer-events: none;
       user-select: none;
     }
@@ -303,6 +304,16 @@
       font-size: 12px;
       letter-spacing: 0.02em;
       background: linear-gradient(155deg, #ffe08a 0%, var(--clay-amber) 45%, var(--clay-amber-deep) 100%);
+      padding: 6px;
+    }
+    #rankBtn img {
+      display: block;
+      width: 20px;
+      height: 20px;
+      object-fit: contain;
+      filter: brightness(0) invert(1);
+      pointer-events: none;
+      user-select: none;
     }
     #infoBtn:hover, #paramPanelBtn:hover, #rankBtn:hover {
       transform: translateY(-4px) scale(1.07);
@@ -459,7 +470,8 @@
     #rankModal .modal-content {
       max-width: 360px;
       width: 90%;
-      max-height: min(86vh, 720px);
+      /* 與 info popup 同級高度（.modal-content max-height: 80%） */
+      max-height: 80%;
       display: flex;
       flex-direction: column;
       padding: 22px 16px 16px;
@@ -809,7 +821,8 @@
       display: flex;
       flex-direction: column;
       text-align: center;
-      max-height: min(86vh, 720px);
+      /* 與 info popup 同級高度 */
+      max-height: 80%;
       padding: 22px 16px 16px;
       width: 90%;
       max-width: 340px;
@@ -1374,7 +1387,6 @@
             <button type="button" id="resultShareBtn" title="分享">分享</button>
           </div>
         </div>
-        <!-- 線上排行榜上傳 -->
         <div id="lbSubmitWrap" style="margin:12px 0 4px;text-align:center;">
           <div class="result-share-label" style="margin-bottom:8px;">上傳到線上排行榜</div>
           <div style="display:flex;gap:8px;align-items:center;justify-content:center;flex-wrap:wrap;">
@@ -1422,8 +1434,8 @@
   </div>
   <div class="btn-row">
     <button id="infoBtn" title="遊戲說明">i</button>
-    <button type="button" id="rankBtn" title="排行榜">🏆</button>
-    <button type="button" id="ytUnmuteBtn" title="海影聲音" aria-pressed="false"><img src="img/icon_speaker_OFF.png" alt="海影聲音" width="22" height="22"></button>
+    <button type="button" id="rankBtn" title="排行榜"><img src="img/ranking-svgrepo-com.svg" alt="排行榜" width="20" height="20"></button>
+    <button type="button" id="ytUnmuteBtn" title="海影聲音" aria-pressed="false"><img src="img/speaker-off-svgrepo-com.svg" alt="海影聲音" width="22" height="22"></button>
   </div>
   <div id="joystick" >
     <div id="joystick-base"></div>
@@ -5293,17 +5305,14 @@ async function shareResultShare() {
 }
 
 // ============================================================
-// ============================================================
 // 線上排行榜（SimpleBoards API）
-// POST https://api.simpleboards.dev/api/entries
-// GET  https://api.simpleboards.dev/api/leaderboards/{id}/entries
 // ============================================================
 const SB_API_KEY = '14931374-1c18-45a2-a4d8-11284128f1bf';
 const SB_LEADERBOARD_ID = 'cff6b6c7-6fb8-4ad1-8a13-08df0ddede9d';
 const SB_API_BASE = 'https://api.simpleboards.dev/api';
 const PLAYER_NAME_KEY = 'efishing_player_name_v1';
 const PLAYER_ID_KEY = 'efishing_player_id_v1';
-let lastSubmittedScore = null; // 本局是否已上傳
+let lastSubmittedScore = null;
 let lastLeaderboardEntryId = null;
 
 function getOrCreatePlayerId() {
@@ -5317,36 +5326,19 @@ function getOrCreatePlayerId() {
     return 'p_anon_' + Date.now();
   }
 }
-
 function loadSavedPlayerName() {
-  try {
-    return localStorage.getItem(PLAYER_NAME_KEY) || '';
-  } catch (e) {
-    return '';
-  }
+  try { return localStorage.getItem(PLAYER_NAME_KEY) || ''; } catch (e) { return ''; }
 }
-
 function savePlayerName(name) {
-  try {
-    localStorage.setItem(PLAYER_NAME_KEY, name);
-  } catch (e) { /* ignore */ }
+  try { localStorage.setItem(PLAYER_NAME_KEY, name); } catch (e) {}
 }
-
 function formatRankDate(iso) {
   try {
     const d = new Date(iso);
     if (isNaN(d.getTime())) return '';
-    const m = d.getMonth() + 1;
-    const day = d.getDate();
-    const hh = String(d.getHours()).padStart(2, '0');
-    const mm = String(d.getMinutes()).padStart(2, '0');
-    return m + '/' + day + ' ' + hh + ':' + mm;
-  } catch (e) {
-    return '';
-  }
+    return (d.getMonth()+1) + '/' + d.getDate() + ' ' + String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0');
+  } catch (e) { return ''; }
 }
-
-/** 上傳分數到 SimpleBoards */
 async function submitOnlineScore(playerDisplayName, scoreVal, metadataObj) {
   const body = {
     leaderboardId: SB_LEADERBOARD_ID,
@@ -5357,44 +5349,25 @@ async function submitOnlineScore(playerDisplayName, scoreVal, metadataObj) {
   };
   const res = await fetch(SB_API_BASE + '/entries', {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'x-api-key': SB_API_KEY
-    },
+    headers: { 'Content-Type': 'application/json', 'x-api-key': SB_API_KEY },
     body: JSON.stringify(body)
   });
   if (!res.ok) {
-    const t = await res.text().catch(function() { return ''; });
+    const t = await res.text().catch(function(){return '';});
     throw new Error('上傳失敗 (' + res.status + ') ' + t.slice(0, 80));
   }
-  const data = await res.json().catch(function() { return null; });
-  return data;
+  return await res.json().catch(function(){ return null; });
 }
-
-/** 拉取線上排行榜 */
 async function fetchOnlineLeaderboard() {
-  const res = await fetch(
-    SB_API_BASE + '/leaderboards/' + encodeURIComponent(SB_LEADERBOARD_ID) + '/entries',
-    {
-      method: 'GET',
-      headers: { 'x-api-key': SB_API_KEY }
-    }
-  );
-  if (!res.ok) {
-    throw new Error('讀取排行榜失敗 (' + res.status + ')');
-  }
-  const data = await res.json();
-  // 可能是陣列，或 { entries: [...] }
-  let list = Array.isArray(data) ? data : (data && Array.isArray(data.entries) ? data.entries : []);
-  // 依分數降冪排序（API 通常已排好，再保險一次）
-  list = list.slice().sort(function(a, b) {
-    const sa = parseInt(a.score, 10) || 0;
-    const sb = parseInt(b.score, 10) || 0;
-    return sb - sa;
+  const res = await fetch(SB_API_BASE + '/leaderboards/' + encodeURIComponent(SB_LEADERBOARD_ID) + '/entries', {
+    method: 'GET', headers: { 'x-api-key': SB_API_KEY }
   });
+  if (!res.ok) throw new Error('讀取排行榜失敗 (' + res.status + ')');
+  const data = await res.json();
+  let list = Array.isArray(data) ? data : (data && Array.isArray(data.entries) ? data.entries : []);
+  list = list.slice().sort(function(a,b){ return (parseInt(b.score,10)||0) - (parseInt(a.score,10)||0); });
   return list.slice(0, 50);
 }
-
 function renderOnlineRankList(entries, highlightId) {
   const listEl = document.getElementById('rankList');
   if (!listEl) return;
@@ -5410,30 +5383,18 @@ function renderOnlineRankList(entries, highlightId) {
     const sc = parseInt(e.score, 10) || 0;
     const name = (e.playerDisplayName || e.playerId || '匿名').slice(0, 16);
     const isMe = (e.playerId && e.playerId === myId) || (highlightId && e.id === highlightId);
-    const cls = 'rank-row' +
-      (pos <= 3 ? ' rank-' + pos : '') +
-      (isMe ? ' is-me' : '');
+    const cls = 'rank-row' + (pos <= 3 ? ' rank-' + pos : '') + (isMe ? ' is-me' : '');
     let meta = name;
     try {
       if (e.metadata) {
         const m = typeof e.metadata === 'string' ? JSON.parse(e.metadata) : e.metadata;
         if (m && m.playTime) meta += ' · ' + m.playTime;
       }
-    } catch (err) { /* ignore */ }
-    html +=
-      '<div class="' + cls + '">' +
-        '<div class="rank-pos">' + pos + '</div>' +
-        '<div class="rank-main">' +
-          '<div class="rank-score">' + sc + ' <span style="font-size:0.7em;font-weight:600;">pt</span>' +
-            (isMe ? ' <span style="font-size:0.65em;color:#d4880a;">我</span>' : '') +
-          '</div>' +
-          '<div class="rank-meta">' + meta + '</div>' +
-        '</div>' +
-      '</div>';
+    } catch (err) {}
+    html += '<div class="' + cls + '"><div class="rank-pos">' + pos + '</div><div class="rank-main"><div class="rank-score">' + sc + ' <span style="font-size:0.7em;font-weight:600;">pt</span>' + (isMe ? ' <span style="font-size:0.65em;color:#d4880a;">我</span>' : '') + '</div><div class="rank-meta">' + meta + '</div></div></div>';
   }
   listEl.innerHTML = html;
 }
-
 async function showRankModal(highlightId) {
   const modal = document.getElementById('rankModal');
   if (!modal) return;
@@ -5442,42 +5403,28 @@ async function showRankModal(highlightId) {
   if (listEl) listEl.innerHTML = '<div class="rank-empty">載入中…</div>';
   if (typeof sfx === 'function') sfx('ui_click', { throttleMs: 80 });
   try {
-    const entries = await fetchOnlineLeaderboard();
-    renderOnlineRankList(entries, highlightId || lastLeaderboardEntryId);
+    renderOnlineRankList(await fetchOnlineLeaderboard(), highlightId || lastLeaderboardEntryId);
   } catch (err) {
-    if (listEl) {
-      listEl.innerHTML = '<div class="rank-empty">無法載入排行榜<br>' +
-        (err && err.message ? err.message : '請檢查網路後重試') + '</div>';
-    }
+    if (listEl) listEl.innerHTML = '<div class="rank-empty">無法載入排行榜<br>' + (err && err.message ? err.message : '請檢查網路後重試') + '</div>';
   }
 }
-
 function hideRankModal() {
   const modal = document.getElementById('rankModal');
   if (modal) modal.style.display = 'none';
 }
-
 function setLbSubmitStatus(msg, isError) {
   const el = document.getElementById('lbSubmitStatus');
   if (!el) return;
   el.textContent = msg || '';
   el.style.color = isError ? 'var(--clay-coral)' : 'var(--clay-mint-deep)';
 }
-
 async function handleLbSubmit() {
   const nameInput = document.getElementById('lbPlayerName');
   const btn = document.getElementById('lbSubmitBtn');
   if (!nameInput || !btn) return;
   let name = (nameInput.value || '').trim();
-  if (!name) {
-    setLbSubmitStatus('請輸入暱稱', true);
-    nameInput.focus();
-    return;
-  }
-  if (lastSubmittedScore === score) {
-    setLbSubmitStatus('本局已上傳過', false);
-    return;
-  }
+  if (!name) { setLbSubmitStatus('請輸入暱稱', true); nameInput.focus(); return; }
+  if (lastSubmittedScore === score) { setLbSubmitStatus('本局已上傳過', false); return; }
   name = name.slice(0, 16);
   savePlayerName(name);
   btn.disabled = true;
@@ -5487,9 +5434,7 @@ async function handleLbSubmit() {
       playTime: formatPlayTime(elapsedGameTime),
       playSec: Math.round(elapsedGameTime),
       fishTypes: Object.keys(collectedFishCounts).length,
-      totalFish: Object.keys(collectedFishCounts).reduce(function(s, k) {
-        return s + (collectedFishCounts[k] || 0);
-      }, 0),
+      totalFish: Object.keys(collectedFishCounts).reduce(function(s,k){ return s + (collectedFishCounts[k]||0); }, 0),
       trash: trashCaughtCount
     };
     const data = await submitOnlineScore(name, score, meta);
@@ -5503,12 +5448,10 @@ async function handleLbSubmit() {
     btn.disabled = false;
   }
 }
-
 function showGameOverModal() {
   const modal = document.getElementById('gameOverModal');
   const statsEl = document.getElementById('gameOverStats');
   if (!modal || !statsEl) return;
-  // GameOver 過場已播過音效則不再重播
   if (!(document.getElementById('gameOverAnim') && document.getElementById('gameOverAnim').dataset.sfxDone === '1')) {
     sfx('game_over');
   }
@@ -5518,35 +5461,22 @@ function showGameOverModal() {
   const keys = Object.keys(collectedFishCounts);
   const fishTypeCount = keys.length;
   let totalFishCaught = 0;
-  for (let i = 0; i < keys.length; i++) {
-    totalFishCaught += collectedFishCounts[keys[i]];
-  }
-  keys.sort(function(a, b) {
-    return (collectedFishCounts[b] || 0) - (collectedFishCounts[a] || 0);
-  });
+  for (let i = 0; i < keys.length; i++) totalFishCaught += collectedFishCounts[keys[i]];
+  keys.sort(function(a,b){ return (collectedFishCounts[b]||0) - (collectedFishCounts[a]||0); });
   const playTime = formatPlayTime(elapsedGameTime);
-  const cLabel = '#8b95a8';
-  const cVal = '#8b7cb8';
+  const cLabel = '#8b95a8', cVal = '#8b7cb8';
   const rowStyle = 'display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid rgba(26,58,110,0.12);padding:7px 2px;gap:8px;font-weight:400;';
   const cardStyle = 'flex:0 0 auto;width:64px;display:flex;flex-direction:column;align-items:center;gap:4px;padding:6px 4px;border-radius:12px;background:rgba(255,255,255,0.7);box-shadow:0 1px 4px rgba(80,110,170,0.08);';
   let listHtml = '';
-  if (keys.length === 0) {
-    listHtml = '<div style="padding:8px 4px;color:' + cLabel + ';font-size:0.88em;font-weight:400;opacity:0.75;">本局尚未釣到魚</div>';
+  if (!keys.length) {
+    listHtml = '<div style="padding:8px 4px;color:' + cLabel + ';font-size:0.88em;opacity:0.75;">本局尚未釣到魚</div>';
   } else {
-    listHtml = '<div style="display:flex;flex-direction:row;flex-wrap:nowrap;gap:8px;overflow-x:auto;-webkit-overflow-scrolling:touch;padding:4px 2px 8px;scrollbar-width:thin;">';
+    listHtml = '<div style="display:flex;flex-wrap:nowrap;gap:8px;overflow-x:auto;padding:4px 2px 8px;">';
     for (let i = 0; i < keys.length; i++) {
-      const k = keys[i];
-      const n = collectedFishCounts[k];
-      const src = fishTypeImgSrc(k);
-      const label = fishTypeLabel(k);
-      const imgHtml = src
-        ? '<img src="' + src + '" alt="' + label + '" title="' + label + '" width="48" height="40" style="width:48px;height:40px;object-fit:contain;filter:drop-shadow(0 1px 2px rgba(80,110,170,0.18));" onerror="this.style.display=\'none\'">'
-        : '<span style="width:48px;height:40px;display:flex;align-items:center;justify-content:center;font-size:10px;color:' + cLabel + ';">' + label + '</span>';
-      listHtml +=
-        '<div style="' + cardStyle + '" title="' + label + '">' +
-          imgHtml +
-          '<span style="color:' + cVal + ';font-weight:600;font-size:0.82em;letter-spacing:0.02em;">×' + n + '</span>' +
-        '</div>';
+      const k = keys[i], n = collectedFishCounts[k];
+      const src = fishTypeImgSrc(k), label = fishTypeLabel(k);
+      const imgHtml = src ? '<img src="' + src + '" alt="" width="48" height="40" style="width:48px;height:40px;object-fit:contain;" onerror="this.style.display=\'none\'">' : '';
+      listHtml += '<div style="' + cardStyle + '">' + imgHtml + '<span style="color:' + cVal + ';font-weight:600;font-size:0.82em;">×' + n + '</span></div>';
     }
     listHtml += '</div>';
   }
@@ -5555,26 +5485,16 @@ function showGameOverModal() {
     '<div style="' + rowStyle + '"><span style="color:' + cLabel + ';font-weight:500;">花費時間</span><span style="color:' + cVal + ';font-weight:600;">' + playTime + '</span></div>' +
     '<div style="' + rowStyle + '"><span style="color:' + cLabel + ';font-weight:500;">種類／總隻數</span><span style="color:' + cVal + ';font-weight:600;">' + fishTypeCount + ' 種／' + totalFishCaught + ' 隻</span></div>' +
     '<div style="' + rowStyle + '"><span style="color:' + cLabel + ';font-weight:500;">收集垃圾</span><span style="color:' + cVal + ';font-weight:600;">' + trashCaughtCount + '</span></div>' +
-    '<div style="margin-top:12px;padding:10px 8px;border-radius:16px;background:linear-gradient(160deg,#fff 0%,#f5f8fd 100%);box-shadow:inset 2px 3px 10px rgba(90,120,180,0.08);">' +
-      '<div style="font-weight:600;color:' + cVal + ';margin-bottom:6px;letter-spacing:0.06em;font-size:0.92em;">釣獲列表</div>' +
-      listHtml +
-    '</div>';
-  // 預填暱稱
+    '<div style="margin-top:12px;padding:10px 8px;border-radius:16px;background:linear-gradient(160deg,#fff 0%,#f5f8fd 100%);box-shadow:inset 2px 3px 10px rgba(90,120,180,0.08);"><div style="font-weight:600;color:' + cVal + ';margin-bottom:6px;font-size:0.92em;">釣獲列表</div>' + listHtml + '</div>';
   const nameInput = document.getElementById('lbPlayerName');
-  if (nameInput) {
-    nameInput.value = loadSavedPlayerName();
-  }
+  if (nameInput) nameInput.value = loadSavedPlayerName();
   setLbSubmitStatus('', false);
   const submitBtn = document.getElementById('lbSubmitBtn');
   if (submitBtn) submitBtn.disabled = false;
   modal.style.display = 'flex';
-
-  // 產生分享 Grid 圖
   const shareWrap = document.getElementById('resultShareWrap');
   if (shareWrap) shareWrap.style.display = 'none';
-  generateResultShareCard().then(function(c) {
-    if (c) showResultSharePreview(c);
-  }).catch(function() { /* ignore */ });
+  generateResultShareCard().then(function(c){ if (c) showResultSharePreview(c); }).catch(function(){});
 }
 function hideGameOverModal() {
   const modal = document.getElementById('gameOverModal');
@@ -7269,15 +7189,13 @@ if (gameOverRestartBtn) {
   const refreshBtn = document.getElementById('rankRefreshBtn');
   if (rankBtn) {
     rankBtn.addEventListener('click', function(e) {
-      e.preventDefault();
-      e.stopPropagation();
+      e.preventDefault(); e.stopPropagation();
       showRankModal(lastLeaderboardEntryId);
     });
   }
   if (goRankBtn) {
     goRankBtn.addEventListener('click', function(e) {
-      e.preventDefault();
-      e.stopPropagation();
+      e.preventDefault(); e.stopPropagation();
       showRankModal(lastLeaderboardEntryId);
     });
   }
@@ -7299,28 +7217,21 @@ if (gameOverRestartBtn) {
       if (typeof sfx === 'function') sfx('ui_click', { throttleMs: 80 });
     });
   }
-  // 上傳按鈕
   const lbSubmitBtn = document.getElementById('lbSubmitBtn');
   if (lbSubmitBtn) {
     lbSubmitBtn.addEventListener('click', function(e) {
-      e.preventDefault();
-      handleLbSubmit();
+      e.preventDefault(); handleLbSubmit();
     });
   }
   const lbNameInput = document.getElementById('lbPlayerName');
   if (lbNameInput) {
     lbNameInput.addEventListener('keydown', function(e) {
-      if (e.key === 'Enter') {
-        e.preventDefault();
-        handleLbSubmit();
-      }
+      if (e.key === 'Enter') { e.preventDefault(); handleLbSubmit(); }
     });
   }
   window.addEventListener('keydown', function(e) {
     if (!rankModal || rankModal.style.display !== 'flex') return;
-    if (e.key === 'Escape' || e.key === 'Esc') {
-      hideRankModal();
-    }
+    if (e.key === 'Escape' || e.key === 'Esc') hideRankModal();
   });
 })();
 // 分享卡片：分享／下載
@@ -7409,7 +7320,7 @@ function updateYtUnmuteBtn() {
   if (!seaYtStarted) {
     btn.classList.remove('is-visible', 'is-on', 'is-need-sound');
     btn.setAttribute('aria-pressed', 'false');
-    icon.src = 'img/icon_speaker_OFF.png';
+    icon.src = 'img/speaker-off-svgrepo-com.svg';
     return;
   }
   btn.classList.add('is-visible');
@@ -7417,14 +7328,14 @@ function updateYtUnmuteBtn() {
     // 靜音／關聲：OFF 圖 + 脈衝提示可開聲
     btn.classList.remove('is-on');
     btn.classList.add('is-need-sound');
-    icon.src = 'img/icon_speaker_OFF.png';
+    icon.src = 'img/speaker-off-svgrepo-com.svg';
     btn.setAttribute('aria-pressed', 'false');
     btn.title = '開啟海影聲音';
   } else {
     // 已開聲：ON 圖，停止動作
     btn.classList.add('is-on');
     btn.classList.remove('is-need-sound');
-    icon.src = 'img/icon_speaker_ON.png';
+    icon.src = 'img/audio-speaker-on-svgrepo-com.svg';
     btn.setAttribute('aria-pressed', 'true');
     btn.title = '關閉海影聲音';
   }
