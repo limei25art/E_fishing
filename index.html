@@ -470,8 +470,7 @@
     #rankModal .modal-content {
       max-width: 360px;
       width: 90%;
-      /* 與 info popup 同級高度（.modal-content max-height: 80%） */
-      max-height: 80%;
+      max-height: min(86vh, 720px);
       display: flex;
       flex-direction: column;
       padding: 22px 16px 16px;
@@ -821,8 +820,7 @@
       display: flex;
       flex-direction: column;
       text-align: center;
-      /* 與 info popup 同級高度 */
-      max-height: 80%;
+      max-height: min(86vh, 720px);
       padding: 22px 16px 16px;
       width: 90%;
       max-width: 340px;
@@ -1387,8 +1385,9 @@
             <button type="button" id="resultShareBtn" title="分享">分享</button>
           </div>
         </div>
-        <div id="lbSubmitWrap" style="margin:12px 0 4px;text-align:center;">
-          <div class="result-share-label" style="margin-bottom:8px;">上傳到線上排行榜</div>
+        <div id="lbSubmitWrap" style="display:none;margin:12px 0 4px;text-align:center;">
+          <div class="result-share-label" style="margin-bottom:4px;">上傳到線上排行榜</div>
+          <div id="lbRankHint" style="font-size:0.82em;font-weight:700;color:#2fbf7e;margin-bottom:8px;letter-spacing:0.02em;"></div>
           <div style="display:flex;gap:8px;align-items:center;justify-content:center;flex-wrap:wrap;">
             <input type="text" id="lbPlayerName" maxlength="16" placeholder="輸入暱稱（最多16字）" style="flex:1;min-width:120px;max-width:180px;padding:10px 12px;border:none;border-radius:999px;font-size:0.92em;font-weight:600;color:var(--clay-text);background:#fff;box-shadow:inset 1px 2px 6px rgba(90,120,180,0.12);outline:none;">
             <button type="button" id="lbSubmitBtn" class="info-set-btn" style="min-width:88px;padding:10px 16px;">上傳</button>
@@ -1407,7 +1406,7 @@
     <div class="modal-content">
       <button id="closeRankModal" class="modal-close-x" title="關閉">×</button>
       <h2>排行榜</h2>
-      <div class="rank-footer-hint">線上全球榜 · 依得分排序（最多 50 名）</div>
+      <div class="rank-footer-hint">線上全球榜 · 依得分排序（最多 30 名）</div>
       <div class="rank-list-wrap" id="rankList"><div class="rank-empty">載入中…</div></div>
       <button type="button" id="rankRefreshBtn" class="info-set-btn" style="width:100%;margin-top:4px;">重新整理</button>
     </div>
@@ -5310,10 +5309,45 @@ async function shareResultShare() {
 const SB_API_KEY = '14931374-1c18-45a2-a4d8-11284128f1bf';
 const SB_LEADERBOARD_ID = 'cff6b6c7-6fb8-4ad1-8a13-08df0ddede9d';
 const SB_API_BASE = 'https://api.simpleboards.dev/api';
+const SB_TOP_N = 30; // 只顯示／可上傳前 30 名
 const PLAYER_NAME_KEY = 'efishing_player_name_v1';
 const PLAYER_ID_KEY = 'efishing_player_id_v1';
+const PERSONAL_BEST_KEY = 'efishing_personal_best_v1';
 let lastSubmittedScore = null;
 let lastLeaderboardEntryId = null;
+let lastProjectedRank = 0;
+
+function loadPersonalBest() {
+  try {
+    const n = parseInt(localStorage.getItem(PERSONAL_BEST_KEY), 10);
+    return (n > 0) ? n : 0;
+  } catch (e) { return 0; }
+}
+function savePersonalBest(sc) {
+  try {
+    const prev = loadPersonalBest();
+    if (sc > prev) localStorage.setItem(PERSONAL_BEST_KEY, String(sc));
+  } catch (e) {}
+}
+/** 依現有榜單計算本局分數可排第幾（1-based）；榜未滿或可擠進前 N 才回傳 */
+function projectRankFromEntries(entries, scoreVal) {
+  const sc = Math.max(0, scoreVal | 0);
+  const list = (entries || []).slice(0, SB_TOP_N);
+  let rank = 1;
+  for (let i = 0; i < list.length; i++) {
+    const es = parseInt(list[i].score, 10) || 0;
+    if (sc > es) return i + 1;
+    rank = i + 2;
+  }
+  // 榜上不足 N 人 → 可上榜
+  if (list.length < SB_TOP_N) return Math.min(rank, list.length + 1);
+  // 剛好等於最後一名分數也算進榜（並列偏後）
+  if (list.length > 0) {
+    const last = parseInt(list[list.length - 1].score, 10) || 0;
+    if (sc >= last) return SB_TOP_N;
+  }
+  return 0; // 未進前 N
+}
 
 function getOrCreatePlayerId() {
   try {
@@ -5366,13 +5400,13 @@ async function fetchOnlineLeaderboard() {
   const data = await res.json();
   let list = Array.isArray(data) ? data : (data && Array.isArray(data.entries) ? data.entries : []);
   list = list.slice().sort(function(a,b){ return (parseInt(b.score,10)||0) - (parseInt(a.score,10)||0); });
-  return list.slice(0, 50);
+  return list.slice(0, SB_TOP_N);
 }
 function renderOnlineRankList(entries, highlightId) {
   const listEl = document.getElementById('rankList');
   if (!listEl) return;
   if (!entries || !entries.length) {
-    listEl.innerHTML = '<div class="rank-empty">尚無紀錄<br>結束一局後輸入暱稱上傳即可上榜</div>';
+    listEl.innerHTML = '<div class="rank-empty">尚無紀錄<br>進入前 30 名即可上傳上榜</div>';
     return;
   }
   const myId = getOrCreatePlayerId();
@@ -5458,6 +5492,8 @@ function showGameOverModal() {
   const goAnim = document.getElementById('gameOverAnim');
   if (goAnim) goAnim.dataset.sfxDone = '';
   lastSubmittedScore = null;
+  lastProjectedRank = 0;
+
   const keys = Object.keys(collectedFishCounts);
   const fishTypeCount = keys.length;
   let totalFishCaught = 0;
@@ -5465,6 +5501,7 @@ function showGameOverModal() {
   keys.sort(function(a,b){ return (collectedFishCounts[b]||0) - (collectedFishCounts[a]||0); });
   const playTime = formatPlayTime(elapsedGameTime);
   const cLabel = '#8b95a8', cVal = '#8b7cb8';
+  const happy = '#2fbf7e';
   const rowStyle = 'display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid rgba(26,58,110,0.12);padding:7px 2px;gap:8px;font-weight:400;';
   const cardStyle = 'flex:0 0 auto;width:64px;display:flex;flex-direction:column;align-items:center;gap:4px;padding:6px 4px;border-radius:12px;background:rgba(255,255,255,0.7);box-shadow:0 1px 4px rgba(80,110,170,0.08);';
   let listHtml = '';
@@ -5480,18 +5517,68 @@ function showGameOverModal() {
     }
     listHtml += '</div>';
   }
+
+  // 個人最好成績（徽章放在分數前方，開心色細字）
+  const prevBest = loadPersonalBest();
+  const isPersonalBest = score > 0 && score > prevBest;
+  if (isPersonalBest) savePersonalBest(score);
+  const bestBadge = isPersonalBest
+    ? '<span style="font-size:0.68em;font-weight:800;color:' + happy + ';letter-spacing:0.04em;margin-right:6px;vertical-align:middle;">最好成績</span>'
+    : '';
+
   statsEl.innerHTML =
-    '<div style="' + rowStyle + '"><span style="color:' + cLabel + ';font-weight:500;">總得分</span><span style="color:' + cVal + ';font-weight:700;font-size:1.08em;">' + score + ' <span style="font-size:0.72em;font-weight:500;">pt</span></span></div>' +
+    '<div style="' + rowStyle + '"><span style="color:' + cLabel + ';font-weight:500;">總得分</span><span style="color:' + cVal + ';font-weight:700;font-size:1.08em;">' + bestBadge + score + ' <span style="font-size:0.72em;font-weight:500;">pt</span></span></div>' +
     '<div style="' + rowStyle + '"><span style="color:' + cLabel + ';font-weight:500;">花費時間</span><span style="color:' + cVal + ';font-weight:600;">' + playTime + '</span></div>' +
     '<div style="' + rowStyle + '"><span style="color:' + cLabel + ';font-weight:500;">種類／總隻數</span><span style="color:' + cVal + ';font-weight:600;">' + fishTypeCount + ' 種／' + totalFishCaught + ' 隻</span></div>' +
     '<div style="' + rowStyle + '"><span style="color:' + cLabel + ';font-weight:500;">收集垃圾</span><span style="color:' + cVal + ';font-weight:600;">' + trashCaughtCount + '</span></div>' +
     '<div style="margin-top:12px;padding:10px 8px;border-radius:16px;background:linear-gradient(160deg,#fff 0%,#f5f8fd 100%);box-shadow:inset 2px 3px 10px rgba(90,120,180,0.08);"><div style="font-weight:600;color:' + cVal + ';margin-bottom:6px;font-size:0.92em;">釣獲列表</div>' + listHtml + '</div>';
+
+  // 上傳區：預設隱藏，拉榜後若進前 30 才顯示
+  const lbWrap = document.getElementById('lbSubmitWrap');
+  const rankHint = document.getElementById('lbRankHint');
+  if (lbWrap) lbWrap.style.display = 'none';
+  if (rankHint) rankHint.textContent = '';
+  setLbSubmitStatus('', false);
   const nameInput = document.getElementById('lbPlayerName');
   if (nameInput) nameInput.value = loadSavedPlayerName();
-  setLbSubmitStatus('', false);
   const submitBtn = document.getElementById('lbSubmitBtn');
   if (submitBtn) submitBtn.disabled = false;
+
   modal.style.display = 'flex';
+
+  // 非同步查線上榜 → 僅前 30 名顯示上傳；提示預計名次
+  // 未進入前 30 名且不是自己最好成績 → 不顯示上傳區
+  (async function() {
+    try {
+      const entries = await fetchOnlineLeaderboard();
+      const rank = projectRankFromEntries(entries, score);
+      lastProjectedRank = rank;
+      const inTop = rank > 0 && rank <= SB_TOP_N;
+      // 上傳條件：進前 30（最好成績只做標籤，不單獨開上傳）
+      if (inTop) {
+        if (lbWrap) lbWrap.style.display = 'block';
+        if (rankHint) {
+          rankHint.textContent = '現時可上傳 · 預計第 ' + rank + ' 名';
+          rankHint.style.color = happy;
+        }
+      } else {
+        if (lbWrap) lbWrap.style.display = 'none';
+        if (rankHint) rankHint.textContent = '';
+      }
+    } catch (err) {
+      // 網路失敗：僅在本局為最好成績時給一次上傳機會
+      if (isPersonalBest) {
+        if (lbWrap) lbWrap.style.display = 'block';
+        if (rankHint) {
+          rankHint.textContent = '無法讀取榜單 · 本局為最好成績，可嘗試上傳';
+          rankHint.style.color = cLabel;
+        }
+      } else {
+        if (lbWrap) lbWrap.style.display = 'none';
+      }
+    }
+  })();
+
   const shareWrap = document.getElementById('resultShareWrap');
   if (shareWrap) shareWrap.style.display = 'none';
   generateResultShareCard().then(function(c){ if (c) showResultSharePreview(c); }).catch(function(){});
