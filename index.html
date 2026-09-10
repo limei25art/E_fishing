@@ -1400,7 +1400,7 @@
         <div id="lbRankHint" style="font-size:0.82em;font-weight:700;color:#2fbf7e;margin-bottom:4px;letter-spacing:0.02em;"></div>
         <div style="display:flex;gap:6px;align-items:center;justify-content:center;flex-wrap:wrap;">
           <input type="text" id="lbPlayerName" maxlength="16" placeholder="暱稱（可改）" style="flex:1;min-width:110px;max-width:160px;padding:7px 10px;border:none;border-radius:999px;font-size:0.84em;font-weight:600;color:var(--clay-text);background:#fff;box-shadow:inset 1px 2px 6px rgba(90,120,180,0.12);outline:none;">
-          <button type="button" id="lbSubmitBtn" class="info-set-btn" style="min-width:64px;padding:6px 10px;font-size:0.78em;line-height:1.2;">改名重傳</button>
+          <button type="button" id="lbSubmitBtn" class="info-set-btn" style="min-width:64px;padding:6px 10px;font-size:0.78em;line-height:1.2;">修改名稱</button>
         </div>
         <div id="lbSubmitStatus" style="font-size:0.72em;color:var(--clay-text-soft);margin-top:4px;min-height:1.1em;"></div>
       </div>
@@ -1427,9 +1427,8 @@
     <div class="modal-content">
       <button id="closeRankModal" class="modal-close-x" title="關閉">×</button>
       <h2>排行榜</h2>
-      <div class="rank-footer-hint">線上全球榜 · 依得分排序（最多 30 名）</div>
+      <div class="rank-footer-hint">全球排行榜 · 依得分排序（最多 30 名）</div>
       <div class="rank-list-wrap" id="rankList"><div class="rank-empty">載入中…</div></div>
-      <button type="button" id="rankRefreshBtn" class="info-set-btn" style="width:100%;margin-top:4px;">重新整理</button>
     </div>
   </div>
   <!-- 調參面板：靠右側的側邊面板（不是全螢幕遮罩），開啟時遊戲仍會繼續運作，
@@ -5300,8 +5299,8 @@ function downloadResultShare() {
 async function shareResultShare() {
   if (!lastResultShareCanvas) return;
   if (typeof sfx === 'function') sfx('ui_click', { throttleMs: 80 });
-  const title = '自稱姜太公後人 EDlui釣魚記 · 得分 ' + score;
-  const text = '自稱姜太公後人／EDlui釣魚記 ---願者上鉤--- 得分 ' + score + '！';
+  const title = '自稱姜太公後人EDlui釣魚記';
+  const text = '自稱姜太公後人EDlui釣魚記\n---願者上鉤--- 得分' + score + '！\n遊戲連結：https://limei25art.github.io/E_fishing/\n#EDlui #姜太公後人 #edanlui  #網上小遊戲';
   try {
     const blob = await new Promise(function(resolve) {
       lastResultShareCanvas.toBlob(resolve, 'image/png');
@@ -5337,7 +5336,7 @@ const PERSONAL_BEST_KEY = 'efishing_personal_best_v1';
 let lastSubmittedScore = null;
 let lastLeaderboardEntryId = null;
 let lastProjectedRank = 0;
-let renameUploadUsed = false; // 本局改名重傳只用一次；下次好成績上榜後才再開放
+let renameUploadUsed = false; // 本局修改名稱只用一次；下次好成績上榜後才再開放
 
 function loadPersonalBest() {
   try {
@@ -5388,11 +5387,11 @@ function loadSavedPlayerName() {
 function savePlayerName(name) {
   try { localStorage.setItem(PLAYER_NAME_KEY, name); } catch (e) {}
 }
-/** 本機暱稱：有存就用；否則產生 釣客xxxx 並記住（之後可改名） */
+/** 本機暱稱：有存就用；否則產生 弟子xxxx 並記住（之後可改名） */
 function getOrCreateGuestName() {
   let name = loadSavedPlayerName();
   if (name && String(name).trim()) return String(name).trim().slice(0, 16);
-  name = '釣客' + String(Math.floor(1000 + Math.random() * 9000));
+  name = '弟子' + String(Math.floor(1000 + Math.random() * 9000));
   savePlayerName(name);
   return name;
 }
@@ -5493,7 +5492,7 @@ function buildScoreMeta(projectedRank) {
   };
 }
 
-/** 自動／手動上傳（預設暱稱 釣客xxxx；可改名後重傳） */
+/** 自動／手動上傳（預設暱稱 弟子xxxx；可改名後重傳） */
 async function submitScoreWithName(name, opts) {
   opts = opts || {};
   const force = !!opts.force;
@@ -5537,11 +5536,11 @@ async function handleLbSubmit() {
       renameUploadUsed = true;
       if (btn) {
         btn.disabled = true;
-        btn.textContent = '已改名';
+        btn.textContent = '已修改';
       }
       if (nameInput) nameInput.disabled = true;
-      setLbSubmitStatus('已改名上傳 · ' + name + '（本局僅一次）', false);
-      // 改名重傳成功後打開排行榜
+      setLbSubmitStatus('已修改上傳 · ' + name + '（本局僅一次）', false);
+      // 修改名稱成功後打開排行榜
       if (typeof showRankModal === 'function') {
         showRankModal(lastLeaderboardEntryId);
       }
@@ -5600,7 +5599,7 @@ function showGameOverModal() {
   const submitBtn = document.getElementById('lbSubmitBtn');
   if (submitBtn) {
     submitBtn.disabled = true;
-    submitBtn.textContent = '改名重傳';
+    submitBtn.textContent = '修改名稱';
   }
   if (nameInput) nameInput.disabled = true;
 
@@ -5636,7 +5635,7 @@ function showGameOverModal() {
       }
       if (submitBtn) {
         submitBtn.disabled = false;
-        submitBtn.textContent = '改名重傳';
+        submitBtn.textContent = '修改名稱';
       }
       await submitScoreWithName(name, { rank: rank });
     } catch (err) {
@@ -7339,7 +7338,6 @@ if (gameOverRestartBtn) {
   const goRankBtn = document.getElementById('gameOverRankBtn');
   const closeRank = document.getElementById('closeRankModal');
   const rankModal = document.getElementById('rankModal');
-  const refreshBtn = document.getElementById('rankRefreshBtn');
   if (rankBtn) {
     rankBtn.addEventListener('click', function(e) {
       e.preventDefault(); e.stopPropagation();
@@ -7361,13 +7359,6 @@ if (gameOverRestartBtn) {
   if (rankModal) {
     rankModal.addEventListener('click', function(e) {
       if (e.target === rankModal) hideRankModal();
-    });
-  }
-  if (refreshBtn) {
-    refreshBtn.addEventListener('click', function(e) {
-      e.preventDefault();
-      showRankModal(lastLeaderboardEntryId);
-      if (typeof sfx === 'function') sfx('ui_click', { throttleMs: 80 });
     });
   }
   const lbSubmitBtn = document.getElementById('lbSubmitBtn');
