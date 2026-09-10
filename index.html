@@ -325,7 +325,8 @@
       background: linear-gradient(155deg, #ffe08a 0%, var(--clay-amber) 45%, var(--clay-amber-deep) 100%);
       padding: 6px;
     }
-    #rankBtn img {
+    #rankBtn img,
+    #infoBtn img {
       display: block;
       width: 20px;
       height: 20px;
@@ -333,6 +334,10 @@
       filter: brightness(0) invert(1);
       pointer-events: none;
       user-select: none;
+    }
+    #infoBtn {
+      padding: 6px;
+      font-style: normal;
     }
     #infoBtn:hover, #paramPanelBtn:hover, #rankBtn:hover {
       transform: translateY(-4px) scale(1.07);
@@ -1452,7 +1457,7 @@
     </div>
   </div>
   <div class="btn-row">
-    <button id="infoBtn" title="遊戲說明">i</button>
+    <button id="infoBtn" title="遊戲說明"><img src="img/info-borderless-svgrepo-com.svg" alt="說明" width="20" height="20"></button>
     <button type="button" id="rankBtn" title="排行榜"><img src="img/ranking-svgrepo-com.svg" alt="排行榜" width="20" height="20"></button>
     <button type="button" id="ytUnmuteBtn" title="海影聲音" aria-pressed="false"><img src="img/speaker-off-svgrepo-com.svg" alt="海影聲音" width="22" height="22"></button>
   </div>
