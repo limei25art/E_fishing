@@ -9,7 +9,7 @@
     <meta name="robots" content="index,follow">
 
     <meta property="og:title" content="MIRROR KIZUNA">
-    <meta property="og:description" content=" MIRROR, 自稱姜太公後人 EDlui釣魚記 ,EDAN LUI,全世界爵屎心肝椗">
+    <meta property="og:description" content=" EDAN LUI, 自稱姜太公後人 EDlui釣魚記,全世界爵屎心肝椗, MIRROR ">
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://limei25art.github.io/M_kizuna/">
     <meta property="og:image" content="og.jpg">
@@ -1395,6 +1395,15 @@
   <div id="gameOverModal" style="display:none;">
     <div class="modal-content" id="gameOverModalContent">
       <h2 id="gameOverTitle">遊戲結束</h2>
+      <!-- 改名／自動上傳區：置頂 -->
+      <div id="lbSubmitWrap" style="display:none;margin:0 0 10px;text-align:center;">
+        <div id="lbRankHint" style="font-size:0.82em;font-weight:700;color:#2fbf7e;margin-bottom:4px;letter-spacing:0.02em;"></div>
+        <div style="display:flex;gap:6px;align-items:center;justify-content:center;flex-wrap:wrap;">
+          <input type="text" id="lbPlayerName" maxlength="16" placeholder="暱稱（可改）" style="flex:1;min-width:110px;max-width:160px;padding:7px 10px;border:none;border-radius:999px;font-size:0.84em;font-weight:600;color:var(--clay-text);background:#fff;box-shadow:inset 1px 2px 6px rgba(90,120,180,0.12);outline:none;">
+          <button type="button" id="lbSubmitBtn" class="info-set-btn" style="min-width:64px;padding:6px 10px;font-size:0.78em;line-height:1.2;">改名重傳</button>
+        </div>
+        <div id="lbSubmitStatus" style="font-size:0.72em;color:var(--clay-text-soft);margin-top:4px;min-height:1.1em;"></div>
+      </div>
       <div class="game-over-body">
         <div id="gameOverStats">
           <!-- 統計內容由 JS 動態填入 -->
@@ -1405,15 +1414,6 @@
           <div class="result-share-actions">
             <button type="button" id="resultShareBtn" title="分享">分享</button>
           </div>
-        </div>
-        <div id="lbSubmitWrap" style="display:none;margin:12px 0 4px;text-align:center;">
-          <div class="result-share-label" style="margin-bottom:4px;">上傳到線上排行榜</div>
-          <div id="lbRankHint" style="font-size:0.82em;font-weight:700;color:#2fbf7e;margin-bottom:8px;letter-spacing:0.02em;"></div>
-          <div style="display:flex;gap:8px;align-items:center;justify-content:center;flex-wrap:wrap;">
-            <input type="text" id="lbPlayerName" maxlength="16" placeholder="輸入暱稱（最多16字）" style="flex:1;min-width:120px;max-width:180px;padding:10px 12px;border:none;border-radius:999px;font-size:0.92em;font-weight:600;color:var(--clay-text);background:#fff;box-shadow:inset 1px 2px 6px rgba(90,120,180,0.12);outline:none;">
-            <button type="button" id="lbSubmitBtn" class="info-set-btn" style="min-width:88px;padding:10px 16px;">上傳</button>
-          </div>
-          <div id="lbSubmitStatus" style="font-size:0.78em;color:var(--clay-text-soft);margin-top:6px;min-height:1.2em;"></div>
         </div>
       </div>
       <div class="game-over-footer">
@@ -5337,6 +5337,7 @@ const PERSONAL_BEST_KEY = 'efishing_personal_best_v1';
 let lastSubmittedScore = null;
 let lastLeaderboardEntryId = null;
 let lastProjectedRank = 0;
+let renameUploadUsed = false; // 本局改名重傳只用一次；下次好成績上榜後才再開放
 
 function loadPersonalBest() {
   try {
@@ -5386,6 +5387,14 @@ function loadSavedPlayerName() {
 }
 function savePlayerName(name) {
   try { localStorage.setItem(PLAYER_NAME_KEY, name); } catch (e) {}
+}
+/** 本機暱稱：有存就用；否則產生 釣客xxxx 並記住（之後可改名） */
+function getOrCreateGuestName() {
+  let name = loadSavedPlayerName();
+  if (name && String(name).trim()) return String(name).trim().slice(0, 16);
+  name = '釣客' + String(Math.floor(1000 + Math.random() * 9000));
+  savePlayerName(name);
+  return name;
 }
 function formatRankDate(iso) {
   try {
@@ -5473,34 +5482,74 @@ function setLbSubmitStatus(msg, isError) {
   el.textContent = msg || '';
   el.style.color = isError ? 'var(--clay-coral)' : 'var(--clay-mint-deep)';
 }
+function buildScoreMeta(projectedRank) {
+  return {
+    playTime: formatPlayTime(elapsedGameTime),
+    playSec: Math.round(elapsedGameTime),
+    fishTypes: Object.keys(collectedFishCounts).length,
+    totalFish: Object.keys(collectedFishCounts).reduce(function(s,k){ return s + (collectedFishCounts[k]||0); }, 0),
+    trash: trashCaughtCount,
+    rankHint: projectedRank || lastProjectedRank || 0
+  };
+}
+
+/** 自動／手動上傳（預設暱稱 釣客xxxx；可改名後重傳） */
+async function submitScoreWithName(name, opts) {
+  opts = opts || {};
+  const force = !!opts.force;
+  if (!force && lastSubmittedScore === score) {
+    setLbSubmitStatus('本局已上傳', false);
+    return null;
+  }
+  name = String(name || getOrCreateGuestName()).trim().slice(0, 16);
+  if (!name) name = getOrCreateGuestName();
+  savePlayerName(name);
+  setLbSubmitStatus('上傳中…（' + name + '）', false);
+  try {
+    const data = await submitOnlineScore(name, score, buildScoreMeta(opts.rank));
+    lastSubmittedScore = score;
+    if (data && data.id) lastLeaderboardEntryId = data.id;
+    setLbSubmitStatus('已上傳 · ' + name, false);
+    if (typeof sfx === 'function') sfx('score_mid', { throttleMs: 100 });
+    return data;
+  } catch (err) {
+    setLbSubmitStatus(err && err.message ? err.message : '上傳失敗', true);
+    return null;
+  }
+}
+
 async function handleLbSubmit() {
   const nameInput = document.getElementById('lbPlayerName');
   const btn = document.getElementById('lbSubmitBtn');
-  if (!nameInput || !btn) return;
-  let name = (nameInput.value || '').trim();
-  if (!name) { setLbSubmitStatus('請輸入暱稱', true); nameInput.focus(); return; }
-  if (lastSubmittedScore === score) { setLbSubmitStatus('本局已上傳過', false); return; }
-  name = name.slice(0, 16);
-  savePlayerName(name);
-  btn.disabled = true;
-  setLbSubmitStatus('上傳中…', false);
+  // 改名只可上傳一次；要有新好成績上榜才再開放
+  if (renameUploadUsed) {
+    setLbSubmitStatus('改名已用過，下次好成績上榜後可再改', true);
+    if (btn) btn.disabled = true;
+    return;
+  }
+  let name = nameInput ? (nameInput.value || '').trim() : '';
+  if (!name) name = getOrCreateGuestName();
+  if (nameInput) nameInput.value = name;
+  if (btn) btn.disabled = true;
   try {
-    const meta = {
-      playTime: formatPlayTime(elapsedGameTime),
-      playSec: Math.round(elapsedGameTime),
-      fishTypes: Object.keys(collectedFishCounts).length,
-      totalFish: Object.keys(collectedFishCounts).reduce(function(s,k){ return s + (collectedFishCounts[k]||0); }, 0),
-      trash: trashCaughtCount
-    };
-    const data = await submitOnlineScore(name, score, meta);
-    lastSubmittedScore = score;
-    if (data && data.id) lastLeaderboardEntryId = data.id;
-    setLbSubmitStatus('上傳成功！可到排行榜查看', false);
-    if (typeof sfx === 'function') sfx('score_mid', { throttleMs: 100 });
-  } catch (err) {
-    setLbSubmitStatus(err && err.message ? err.message : '上傳失敗', true);
-  } finally {
-    btn.disabled = false;
+    const data = await submitScoreWithName(name, { force: true, rank: lastProjectedRank });
+    if (data) {
+      renameUploadUsed = true;
+      if (btn) {
+        btn.disabled = true;
+        btn.textContent = '已改名';
+      }
+      if (nameInput) nameInput.disabled = true;
+      setLbSubmitStatus('已改名上傳 · ' + name + '（本局僅一次）', false);
+      // 改名重傳成功後打開排行榜
+      if (typeof showRankModal === 'function') {
+        showRankModal(lastLeaderboardEntryId);
+      }
+    } else if (btn) {
+      btn.disabled = false;
+    }
+  } catch (e) {
+    if (btn) btn.disabled = false;
   }
 }
 function showGameOverModal() {
@@ -5514,30 +5563,16 @@ function showGameOverModal() {
   if (goAnim) goAnim.dataset.sfxDone = '';
   lastSubmittedScore = null;
   lastProjectedRank = 0;
+  // 改名額度在「本局成功上榜」時才重置（見下方 auto 成功後）
 
   const keys = Object.keys(collectedFishCounts);
   const fishTypeCount = keys.length;
   let totalFishCaught = 0;
   for (let i = 0; i < keys.length; i++) totalFishCaught += collectedFishCounts[keys[i]];
-  keys.sort(function(a,b){ return (collectedFishCounts[b]||0) - (collectedFishCounts[a]||0); });
   const playTime = formatPlayTime(elapsedGameTime);
   const cLabel = '#8b95a8', cVal = '#8b7cb8';
   const happy = '#2fbf7e';
   const rowStyle = 'display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid rgba(26,58,110,0.12);padding:7px 2px;gap:8px;font-weight:400;';
-  const cardStyle = 'flex:0 0 auto;width:64px;display:flex;flex-direction:column;align-items:center;gap:4px;padding:6px 4px;border-radius:12px;background:rgba(255,255,255,0.7);box-shadow:0 1px 4px rgba(80,110,170,0.08);';
-  let listHtml = '';
-  if (!keys.length) {
-    listHtml = '<div style="padding:8px 4px;color:' + cLabel + ';font-size:0.88em;opacity:0.75;">本局尚未釣到魚</div>';
-  } else {
-    listHtml = '<div style="display:flex;flex-wrap:nowrap;gap:8px;overflow-x:auto;padding:4px 2px 8px;">';
-    for (let i = 0; i < keys.length; i++) {
-      const k = keys[i], n = collectedFishCounts[k];
-      const src = fishTypeImgSrc(k), label = fishTypeLabel(k);
-      const imgHtml = src ? '<img src="' + src + '" alt="" width="48" height="40" style="width:48px;height:40px;object-fit:contain;" onerror="this.style.display=\'none\'">' : '';
-      listHtml += '<div style="' + cardStyle + '">' + imgHtml + '<span style="color:' + cVal + ';font-weight:600;font-size:0.82em;">×' + n + '</span></div>';
-    }
-    listHtml += '</div>';
-  }
 
   // 個人最好成績（徽章放在分數前方，開心色細字）
   const prevBest = loadPersonalBest();
@@ -5551,52 +5586,62 @@ function showGameOverModal() {
     '<div style="' + rowStyle + '"><span style="color:' + cLabel + ';font-weight:500;">總得分</span><span style="color:' + cVal + ';font-weight:700;font-size:1.08em;">' + bestBadge + score + ' <span style="font-size:0.72em;font-weight:500;">pt</span></span></div>' +
     '<div style="' + rowStyle + '"><span style="color:' + cLabel + ';font-weight:500;">花費時間</span><span style="color:' + cVal + ';font-weight:600;">' + playTime + '</span></div>' +
     '<div style="' + rowStyle + '"><span style="color:' + cLabel + ';font-weight:500;">種類／總隻數</span><span style="color:' + cVal + ';font-weight:600;">' + fishTypeCount + ' 種／' + totalFishCaught + ' 隻</span></div>' +
-    '<div style="' + rowStyle + '"><span style="color:' + cLabel + ';font-weight:500;">收集垃圾</span><span style="color:' + cVal + ';font-weight:600;">' + trashCaughtCount + '</span></div>' +
-    '<div style="margin-top:12px;padding:10px 8px;border-radius:16px;background:linear-gradient(160deg,#fff 0%,#f5f8fd 100%);box-shadow:inset 2px 3px 10px rgba(90,120,180,0.08);"><div style="font-weight:600;color:' + cVal + ';margin-bottom:6px;font-size:0.92em;">釣獲列表</div>' + listHtml + '</div>';
+    '<div style="' + rowStyle + '"><span style="color:' + cLabel + ';font-weight:500;">收集垃圾</span><span style="color:' + cVal + ';font-weight:600;">' + trashCaughtCount + '</span></div>';
 
-  // 上傳區：預設隱藏，拉榜後若進前 30 才顯示
+  // 上傳區：須「本機最好成績」且「前 30」才顯示並自動上傳
   const lbWrap = document.getElementById('lbSubmitWrap');
   const rankHint = document.getElementById('lbRankHint');
   if (lbWrap) lbWrap.style.display = 'none';
   if (rankHint) rankHint.textContent = '';
   setLbSubmitStatus('', false);
+  const guestName = getOrCreateGuestName();
   const nameInput = document.getElementById('lbPlayerName');
-  if (nameInput) nameInput.value = loadSavedPlayerName();
+  if (nameInput) nameInput.value = guestName;
   const submitBtn = document.getElementById('lbSubmitBtn');
-  if (submitBtn) submitBtn.disabled = false;
+  if (submitBtn) {
+    submitBtn.disabled = true;
+    submitBtn.textContent = '改名重傳';
+  }
+  if (nameInput) nameInput.disabled = true;
 
   modal.style.display = 'flex';
 
-  // 非同步查線上榜 → 僅前 30 名顯示上傳；提示預計名次
-  // 未進入前 30 名且不是自己最好成績 → 不顯示上傳區
   (async function() {
+    // 不是本機最好成績 → 不上傳、不顯示
+    if (!isPersonalBest) {
+      if (lbWrap) lbWrap.style.display = 'none';
+      return;
+    }
     try {
       const entries = await fetchOnlineLeaderboard();
       const rank = projectRankFromEntries(entries, score);
       lastProjectedRank = rank;
       const inTop = rank > 0 && rank <= SB_TOP_N;
-      // 上傳條件：進前 30（最好成績只做標籤，不單獨開上傳）
-      if (inTop) {
-        if (lbWrap) lbWrap.style.display = 'block';
-        if (rankHint) {
-          rankHint.textContent = '現時可上傳 · 預計第 ' + rank + ' 名';
-          rankHint.style.color = happy;
-        }
-      } else {
+      // 未進前 30 → 不上傳、不顯示
+      if (!inTop) {
         if (lbWrap) lbWrap.style.display = 'none';
-        if (rankHint) rankHint.textContent = '';
+        return;
       }
+      // 好成績上榜：開放一次改名額度
+      renameUploadUsed = false;
+      if (lbWrap) lbWrap.style.display = 'block';
+      if (rankHint) {
+        rankHint.textContent = '最好成績 · 預計第 ' + rank + ' 名 · 自動上傳';
+        rankHint.style.color = happy;
+      }
+      const name = (nameInput && nameInput.value.trim()) ? nameInput.value.trim().slice(0, 16) : guestName;
+      if (nameInput) {
+        nameInput.value = name;
+        nameInput.disabled = false;
+      }
+      if (submitBtn) {
+        submitBtn.disabled = false;
+        submitBtn.textContent = '改名重傳';
+      }
+      await submitScoreWithName(name, { rank: rank });
     } catch (err) {
-      // 網路失敗：僅在本局為最好成績時給一次上傳機會
-      if (isPersonalBest) {
-        if (lbWrap) lbWrap.style.display = 'block';
-        if (rankHint) {
-          rankHint.textContent = '無法讀取榜單 · 本局為最好成績，可嘗試上傳';
-          rankHint.style.color = cLabel;
-        }
-      } else {
-        if (lbWrap) lbWrap.style.display = 'none';
-      }
+      // 讀榜失敗：不顯示、不上傳
+      if (lbWrap) lbWrap.style.display = 'none';
     }
   })();
 
