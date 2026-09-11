@@ -5461,6 +5461,7 @@ function renderOnlineRankList(entries, highlightId) {
     try {
       if (e.metadata) {
         const m = typeof e.metadata === 'string' ? JSON.parse(e.metadata) : e.metadata;
+        // 只顯示遊玩時間；date 只寫入 metadata 畀後台睇，唔喺排行榜顯示
         if (m && m.playTime) meta += ' · ' + m.playTime;
       }
     } catch (err) {}
@@ -5492,7 +5493,15 @@ function setLbSubmitStatus(msg, isError) {
   el.style.color = isError ? 'var(--clay-coral)' : 'var(--clay-mint-deep)';
 }
 function buildScoreMeta(projectedRank) {
+  const now = new Date();
+  const pad = function(n) { return String(n).padStart(2, '0'); };
+  // 本地日期時間字串，方便後台／榜單讀取
+  const dateLocal =
+    now.getFullYear() + '-' + pad(now.getMonth() + 1) + '-' + pad(now.getDate()) +
+    ' ' + pad(now.getHours()) + ':' + pad(now.getMinutes());
   return {
+    date: dateLocal,
+    dateISO: now.toISOString(),
     playTime: formatPlayTime(elapsedGameTime),
     playSec: Math.round(elapsedGameTime),
     fishTypes: Object.keys(collectedFishCounts).length,
