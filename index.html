@@ -541,15 +541,86 @@
       background: linear-gradient(155deg, #9ad0ff 0%, #4a86d8 100%);
       box-shadow: 2px 2px 6px rgba(74, 134, 216, 0.3);
     }
+    /* —— 前三名：列底淡藍漸變（1 較藍 → 3 最淡）；圓形名次金／銀／銅；無 icon、無斜條 —— */
+    .rank-row.rank-1 {
+      background: linear-gradient(160deg, #d6ebff 0%, #b8dcff 50%, #9accf8 100%);
+      border: 1px solid rgba(120, 180, 240, 0.45);
+      box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.65),
+        2px 3px 10px rgba(90, 150, 220, 0.16);
+    }
     .rank-row.rank-1 .rank-pos {
-      background: linear-gradient(155deg, #ffe08a 0%, #f0a820 100%);
-      box-shadow: 2px 2px 8px rgba(240, 168, 32, 0.4);
+      width: 30px;
+      height: 30px;
+      flex-basis: 30px;
+      font-size: 0.9em;
+      border-radius: 50%;
+      background: linear-gradient(155deg, #ffe9a0 0%, #f0c14d 45%, #d4a017 100%);
+      box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.55),
+        2px 2px 8px rgba(180, 130, 20, 0.35);
+      color: #fff;
+      text-shadow: 0 1px 1px rgba(120, 80, 0, 0.25);
+    }
+    .rank-row.rank-1 .rank-score {
+      color: #2a5a9a;
+      font-size: 1.1em;
+    }
+    .rank-row.rank-1 .rank-meta {
+      color: #4a72a8;
+    }
+    .rank-row.rank-2 {
+      background: linear-gradient(160deg, #e8f4ff 0%, #d4ebff 50%, #c4e2fc 100%);
+      border: 1px solid rgba(150, 200, 245, 0.5);
+      box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.7),
+        2px 3px 9px rgba(120, 170, 220, 0.12);
     }
     .rank-row.rank-2 .rank-pos {
-      background: linear-gradient(155deg, #e8eef8 0%, #9aa8c0 100%);
+      border-radius: 50%;
+      background: linear-gradient(155deg, #f0f4f8 0%, #c5ced8 45%, #9aa5b2 100%);
+      box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.7),
+        2px 2px 7px rgba(100, 120, 140, 0.28);
+      color: #fff;
+      text-shadow: 0 1px 1px rgba(60, 70, 80, 0.3);
+    }
+    .rank-row.rank-2 .rank-score {
+      color: #3a6aaa;
+    }
+    .rank-row.rank-2 .rank-meta {
+      color: #5a7eaa;
+    }
+    .rank-row.rank-3 {
+      background: linear-gradient(160deg, #f5faff 0%, #eef6ff 50%, #e4f1fc 100%);
+      border: 1px solid rgba(180, 215, 245, 0.55);
+      box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.8),
+        2px 3px 8px rgba(150, 190, 230, 0.1);
     }
     .rank-row.rank-3 .rank-pos {
-      background: linear-gradient(155deg, #f5c9a8 0%, #c87840 100%);
+      border-radius: 50%;
+      background: linear-gradient(155deg, #f0c9a0 0%, #d4956a 45%, #b87848 100%);
+      box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.45),
+        2px 2px 6px rgba(150, 100, 50, 0.28);
+      color: #fff;
+      text-shadow: 0 1px 1px rgba(90, 50, 20, 0.3);
+    }
+    .rank-row.rank-3 .rank-score {
+      color: #4a6e98;
+    }
+    .rank-row.rank-3 .rank-meta {
+      color: #6a8aaa;
+    }
+    /* 自己同時係前三：琥珀邊提示「我」 */
+    .rank-row.rank-1.is-me,
+    .rank-row.rank-2.is-me,
+    .rank-row.rank-3.is-me {
+      border: 1.5px solid rgba(240, 168, 32, 0.55);
+      box-shadow:
+        0 0 0 2px rgba(255, 193, 77, 0.22),
+        3px 4px 12px rgba(210, 140, 30, 0.12);
     }
     .rank-row .rank-main {
       flex: 1;
