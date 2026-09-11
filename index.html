@@ -5465,19 +5465,54 @@ function renderOnlineRankList(entries, highlightId) {
         if (m && m.playTime) meta += ' · ' + m.playTime;
       }
     } catch (err) {}
-    html += '<div class="' + cls + '"><div class="rank-pos">' + pos + '</div><div class="rank-main"><div class="rank-score">' + sc + ' <span style="font-size:0.7em;font-weight:600;">pt</span>' + (isMe ? ' <span style="font-size:0.65em;color:#d4880a;">我</span>' : '') + '</div><div class="rank-meta">' + meta + '</div></div></div>';
+    html += '<div class="' + cls + '"' + (isMe ? ' id="rankRowMe"' : '') + '><div class="rank-pos">' + pos + '</div><div class="rank-main"><div class="rank-score">' + sc + ' <span style="font-size:0.7em;font-weight:600;">pt</span>' + (isMe ? ' <span style="font-size:0.65em;color:#d4880a;">我</span>' : '') + '</div><div class="rank-meta">' + meta + '</div></div></div>';
   }
   listEl.innerHTML = html;
+  // 捲到自己名次（若有）
+  scrollRankListToMe();
+}
+function scrollRankListToMe() {
+  const listEl = document.getElementById('rankList');
+  if (!listEl) return;
+  function go() {
+    const me = document.getElementById('rankRowMe');
+    if (!me) return false;
+    try {
+      // 先用 scrollIntoView，再微調置中
+      me.scrollIntoView({ block: 'center', inline: 'nearest', behavior: 'auto' });
+      const listRect = listEl.getBoundingClientRect();
+      const meRect = me.getBoundingClientRect();
+      const offset = (meRect.top - listRect.top) - (listEl.clientHeight / 2 - me.offsetHeight / 2);
+      listEl.scrollTop = Math.max(0, listEl.scrollTop + offset);
+      return true;
+    } catch (e) {
+      try { me.scrollIntoView({ block: 'center', behavior: 'auto' }); return true; } catch (e2) { return false; }
+    }
+  }
+  // 多試幾次：等 modal / list layout 完成後第一時間去到自己名次
+  requestAnimationFrame(function() {
+    if (go()) return;
+    requestAnimationFrame(function() {
+      if (go()) return;
+      setTimeout(go, 50);
+      setTimeout(go, 150);
+    });
+  });
 }
 async function showRankModal(highlightId) {
   const modal = document.getElementById('rankModal');
   if (!modal) return;
   modal.style.display = 'flex';
   const listEl = document.getElementById('rankList');
-  if (listEl) listEl.innerHTML = '<div class="rank-empty">載入中…</div>';
+  if (listEl) {
+    listEl.innerHTML = '<div class="rank-empty">載入中…</div>';
+    listEl.scrollTop = 0;
+  }
   if (typeof sfx === 'function') sfx('ui_click', { throttleMs: 80 });
   try {
     renderOnlineRankList(await fetchOnlineLeaderboard(), highlightId || lastLeaderboardEntryId);
+    // 再保險呼叫一次（render 內已 scroll）
+    scrollRankListToMe();
   } catch (err) {
     if (listEl) listEl.innerHTML = '<div class="rank-empty">無法載入排行榜<br>' + (err && err.message ? err.message : '請檢查網路後重試') + '</div>';
   }
