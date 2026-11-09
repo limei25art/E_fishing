@@ -5431,10 +5431,34 @@ async function shareResultShare() {
     const blob = await new Promise(function(resolve) {
       lastResultShareCanvas.toBlob(resolve, 'image/png');
     });
-    if (blob && navigator.share && navigator.canShare) {
-      const file = new File([blob], 'fishing-result.png', { type: 'image/png' });
-      if (navigator.canShare({ files: [file] })) {
-        await navigator.share({ files: [file], title: title, text: text });
+    if (!blob) throw new Error('no result blob');
+
+    const resultFile = new File([blob], 'fishing-result.png', { type: 'image/png' });
+
+    // 額外載入 og.jpg，Threads 等多圖分享時會多一幅
+    let ogFile = null;
+    try {
+      const ogRes = await fetch('og.jpg', { cache: 'force-cache' });
+      if (ogRes.ok) {
+        const ogBlob = await ogRes.blob();
+        if (ogBlob && ogBlob.size > 0) {
+          ogFile = new File([ogBlob], 'og.jpg', { type: ogBlob.type || 'image/jpeg' });
+        }
+      }
+    } catch (e) { /* 忽略，退回只分享結果圖 */ }
+
+    if (navigator.share && navigator.canShare) {
+      // 優先嘗試：結果圖 + og.jpg（兩幅）
+      if (ogFile) {
+        const two = [resultFile, ogFile];
+        if (navigator.canShare({ files: two })) {
+          await navigator.share({ files: two, title: title, text: text });
+          return;
+        }
+      }
+      // 退回：只分享結果圖
+      if (navigator.canShare({ files: [resultFile] })) {
+        await navigator.share({ files: [resultFile], title: title, text: text });
         return;
       }
     }
