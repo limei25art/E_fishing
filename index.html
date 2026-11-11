@@ -986,6 +986,10 @@
       color: #4a5f8e;
       margin-bottom: 2px;
     }
+    #gameOverMvHint b {
+      font-weight: 800;
+      color: #3a4f7e;
+    }
     #gameOverMvBtn {
       display: block;
       width: 100%;
@@ -5381,7 +5385,7 @@ function generateResultShareCard() {
       g.shadowBlur = 12;
       g.shadowOffsetY = 4;
       roundRectPath(g, x, y, cellW, cellH, 22);
-      g.fillStyle = got ? '#fff' : RESULT_MISS_CELL_BG;
+      g.fillStyle = got ? '#f5f8fa' : RESULT_MISS_CELL_BG; // 淡白藍，非純白
       g.fill();
       g.restore();
 
@@ -5496,11 +5500,12 @@ async function shareResultShare() {
     '全程力撐呂爵安💙～快投🗳️\n' +
     '我最喜愛的男歌手：Edan 呂爵安✨\n' +
     '我最喜愛的歌曲：壞人一個✨\n' +
-    '🔥爵屎ssss立刻行動💪！ https://usca.my903.com\n' +
+    '爵屎sss立刻行動💪🔥！ https://usca.my903.com\n' +
+    '\n' +
     '我喺《EDlui釣魚記》釣到 ' + score + ' 分\n' +
     '一齊嚟跟二登大師學點樣願者上鉤🎣\n' +
     '遊戲連結https://limei25art.github.io/E_fishing/\n' +
-    '#EDlui #姜太公後人 #edanlui #網上小遊戲 #免費小遊戲';
+    '#全程力撐#EDlui #姜太公後人 #edanlui';
   try {
     const blob = await new Promise(function(resolve) {
       lastResultShareCanvas.toBlob(resolve, 'image/png');
