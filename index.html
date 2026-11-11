@@ -428,11 +428,11 @@
     .rank-btn-row button,
     #gameOverRestartBtn {
       flex: 1;
-      padding: 15px 22px;
+      padding: 13px 19px; /* 原 15px 22px × 0.85 */
       border: 3px solid rgba(220, 255, 235, 0.85);
       border-radius: var(--clay-radius-pill);
       cursor: pointer;
-      font-size: 1.08em;
+      font-size: 0.92em; /* 原 1.08em × 0.85 */
       font-weight: 800;
       letter-spacing: 0.04em;
       color: #fff;
@@ -664,11 +664,11 @@
     }
     #gameOverRankBtn {
       flex: 1;
-      padding: 12px 14px;
+      padding: 10px 12px; /* 原 12px 14px × 0.85 */
       border: 2px solid rgba(255, 232, 180, 0.9);
       border-radius: var(--clay-radius-pill);
       cursor: pointer;
-      font-size: 0.95em;
+      font-size: 0.81em; /* 原 0.95em × 0.85 */
       font-weight: 800;
       letter-spacing: 0.04em;
       color: #fff;
@@ -954,8 +954,8 @@
     #gameOverModalContent .game-over-footer #gameOverRankBtn {
       flex: 1;
       width: auto;
-      padding: 12px 14px;
-      font-size: 0.95em;
+      padding: 10px 12px; /* 原 12px 14px × 0.85 */
+      font-size: 0.81em; /* 原 0.95em × 0.85 */
     }
     /* MV 投票區：文案在按鈕上方（細字多行），按鈕獨立 */
     #gameOverMvWrap {
@@ -1081,10 +1081,10 @@
     #gameOverStats {
       background: linear-gradient(160deg, #ffffff 0%, var(--clay-surface) 100%);
       border-radius: var(--clay-radius-lg);
-      padding: 10px 12px !important;
+      padding: 6px 12px !important;
       margin: 0 !important;
       font-size: 0.98em;
-      line-height: 1.4; /* 原 1.75 × 0.8 */
+      line-height: 0.95; /* 總得分→收集垃圾 行距 0.95 倍 */
       text-align: left;
       box-shadow:
         inset 2px 3px 10px rgba(90, 120, 180, 0.12),
@@ -1572,8 +1572,8 @@
       <div id="gameOverMvWrap">
         <div id="gameOverMvHint">
           <span class="mv-line mv-title">2026年度-叱咤樂壇</span>
-          <span class="mv-line">🗳️我最喜愛的男歌手：呂爵安✨</span>
-          <span class="mv-line">🗳️我最喜愛的歌曲：壞人一個✨</span>
+          <span class="mv-line">🗳️我最喜愛的男歌手：<b>呂爵安</b>✨</span>
+          <span class="mv-line">🗳️我最喜愛的歌曲：<b>壞人一個</b>✨</span>
         </div>
         <a id="gameOverMvBtn" href="https://usca.my903.com/" target="_blank" rel="noopener noreferrer" title="投給你最喜愛">💙 投給你最喜愛 💙</a>
       </div>
@@ -2065,7 +2065,7 @@ function drawTimeOfDayHud() {
 }
 
 
-const MONSTER_ENERGY_THRESHOLD = 35;     // 水怪：元氣 < 35
+const MONSTER_ENERGY_THRESHOLD = 35;     // 海星：元氣 < 35
 
 // 1 秒內得分：≥1000 → 章魚／海龜；≥1500 → 榴槤
 let recentScoreEvents = [];
@@ -2336,7 +2336,7 @@ const FISH_TYPE_LABELS = {
   fish_shi: '屎屎魚', fish_bird: '鳥仔魚', fish_dumpling: '餃子魚',
   fish_cloud: '雲雲魚', fish_heart: '心心魚', fish_dog: '狗狗魚', fish_bear: '熊仔魚',
   molamola: 'Molamola', octopus: '章魚', turtle: '海龜',
-  fish_durian: '榴槤魚', fish_monster: '水怪魚',
+  fish_durian: '榴槤魚', fish_monster: '海星',
   can: '垃圾 can', bottle: '垃圾 boots', boots: '垃圾 boots'
 };
 // 結算列表縮圖路徑（與遊戲素材一致）
@@ -2976,9 +2976,10 @@ function checkLineCollision() {
     if (sc.reactCooldown > 0) continue;
     const rx = getSpecialHookReaction(sc.type);
     const scale = rx.catchScale || 1;
+    const kindScale = (typeof sc.sizeScale === 'number') ? sc.sizeScale : getFishKindSizeScale(sc.type);
     const specialHalf = getCatchHalfSize(sc.type, LINE_PARAMS.hookCatchPadScaleXSpecial, LINE_PARAMS.hookCatchPadScaleYSpecial);
-    const hw = specialHalf.hw * scale;
-    const hh = specialHalf.hh * scale;
+    const hw = specialHalf.hw * scale * kindScale;
+    const hh = specialHalf.hh * scale * kindScale;
     if (Math.abs(sc.x - bigFish.x) < hw && Math.abs(sc.y - hookY) < hh) {
       tryHookSpecial(sc, LINE_POINTS - 1, 0);
       continue;
@@ -3098,6 +3099,9 @@ function createFish() {
   let fishKind = picked.fishKind;
   const fishVariant = (fishTier === 'mid') ? Math.floor(Math.random() * 3) : 0;
   let sizeScale = 1;
+  if (fishKind) sizeScale = getFishKindSizeScale(fishKind);
+  else if (fishTier === 'urchin') sizeScale = getFishKindSizeScale('urchin');
+  else if (fishTier === 'watermelon') sizeScale = getFishKindSizeScale('watermelon');
   let animSpeed = 4;
   if (fishTier === 'mid') {
     animSpeed = 3.8 + fishVariant * 0.3;
@@ -3577,6 +3581,27 @@ const REAL_IMG_SIZE = {
   fish_dog: { w: 60, h: 36 },
   fish_bear: { w: 60, h: 36 }
 };
+// 各魚種顯示尺寸倍率（相對原圖）
+const FISH_KIND_SIZE_SCALE = {
+  fish_shi: 1.05,       // 屎屎魚
+  fish_bird: 1.15,      // 鳥仔魚
+  fish_dumpling: 0.70,  // 餃子魚
+  fish_cloud: 1.20,     // 雲雲魚
+  fish_heart: 1.10,     // 心心魚
+  fish_dog: 1.10,       // 狗狗魚
+  fish_bear: 1.20,      // 熊仔魚
+  fish_durian: 1.20,    // 榴槤魚
+  molamola: 1.80,       // Molamola
+  fish_monster: 0.70,   // 海星
+  urchin: 1.03,         // 海膽
+  seaurchin: 1.03
+};
+function getFishKindSizeScale(kind) {
+  if (!kind) return 1;
+  const s = FISH_KIND_SIZE_SCALE[kind];
+  return (typeof s === 'number') ? s : 1;
+}
+
 
 // 依「圖片是否已經成功載入」取得目前應該使用的寬高：
 // 圖片載入成功 -> 用圖片本身的 naturalWidth/naturalHeight（最準確）
@@ -3673,7 +3698,8 @@ function drawDebugHitboxes() {
     const sc = specialSeaCreatures[si];
     if (!sc || sc.caught || sc.lifting) continue;
     const half = getCatchHalfSize(sc.type, LINE_PARAMS.hookCatchPadScaleXSpecial, LINE_PARAMS.hookCatchPadScaleYSpecial);
-    strokeBox(sc.x, sc.y, half.hw, half.hh, 'rgba(200,60,220,0.9)', '生物');
+    const scScale = (typeof sc.sizeScale === 'number') ? sc.sizeScale : getFishKindSizeScale(sc.type);
+    strokeBox(sc.x, sc.y, half.hw * scScale, half.hh * scScale, 'rgba(200,60,220,0.9)', '生物');
   }
 
   ctx.restore();
@@ -3744,7 +3770,7 @@ const SPECIAL_SPAWN_DEFS = [
   { type: 'turtle',        name: '海龜',   score: TURTLE_SCORE,        energy: TURTLE_ENERGY,        mode: 'combo', comboTier: 1000, priority: 80, appear: 'day' },
   { type: 'fish_durian',   name: '榴槤魚', score: DURIAN_SCORE,        energy: DURIAN_ENERGY,        mode: 'combo', comboTier: 1500, priority: 85, appear: 'day' },
   { type: 'molamola',      name: 'Molamola', score: MOLAMOLA_SCORE,   energy: MOLAMOLA_ENERGY,      mode: 'energy', energyBelow: MOLAMOLA_ENERGY_THRESHOLD, checkEverySec: 2.5, priority: 90, appear: 'all' },
-  { type: 'fish_monster',  name: '水怪魚', score: MONSTER_SCORE,       energy: MONSTER_ENERGY,       mode: 'energy', energyBelow: MONSTER_ENERGY_THRESHOLD, checkEverySec: 3.0, priority: 100, appear: 'all' }
+  { type: 'fish_monster',  name: '海星', score: MONSTER_SCORE,       energy: MONSTER_ENERGY,       mode: 'energy', energyBelow: MONSTER_ENERGY_THRESHOLD, checkEverySec: 3.0, priority: 100, appear: 'all' }
 ];
 
 function specialDefsByMode(mode) {
@@ -3802,7 +3828,7 @@ const SPECIAL_HOOK_REACTIONS = {
   fish_bear:     { mode: 'heavy',    dodgeChance: 0.1,  catchScale: 1.05, struggleMs: 0,    slipChance: 0.28, fleeRadius: 0,   hitsNeeded: 1 },
   octopus:       { mode: 'struggle', dodgeChance: 0.2,  catchScale: 0.95, struggleMs: 2800, slipChance: 0.22, fleeRadius: 70,  hitsNeeded: 1 },
   turtle:        { mode: 'heavy',    dodgeChance: 0.12, catchScale: 1.1,  struggleMs: 0,    slipChance: 0.32, fleeRadius: 0,   hitsNeeded: 1 },
-  // 榴槤／水怪／Mola：降低難度（較好鉤、較少逃）
+  // 榴槤／海星／Mola：降低難度（較好鉤、較少逃）
   fish_durian:   { mode: 'catch',    dodgeChance: 0.08, catchScale: 1.05, struggleMs: 0,    slipChance: 0.08, fleeRadius: 30,  hitsNeeded: 1 },
   fish_monster:  { mode: 'heavy',    dodgeChance: 0.1,  catchScale: 1.0,  struggleMs: 0,    slipChance: 0.12, fleeRadius: 40,  hitsNeeded: 1 },
   molamola:      { mode: 'catch',    dodgeChance: 0.05, catchScale: 1.25, struggleMs: 0,    slipChance: 0.05, fleeRadius: 50,  hitsNeeded: 1 }
@@ -4067,11 +4093,13 @@ function makeSpecialCreature(def) {
   const style = SPECIAL_SWIM_STYLES[def.type] || SPECIAL_SWIM_DEFAULT;
   const speed = style.speedMin + Math.random() * (style.speedMax - style.speedMin);
   const baseY = Math.random() * Math.max(0, getFishBottomY() - getFishTopY()) + getFishTopY();
+  const sizeScale = getFishKindSizeScale(def.type);
   return {
     type: def.type,
     name: def.name || def.type,
     rewardScore: def.score,
     rewardEnergy: def.energy,
+    sizeScale: sizeScale,
     x,
     y: baseY,
     baseY: baseY,
@@ -4566,6 +4594,8 @@ function drawSpecialSeaCreature(creature) {
     tilt = creature.drawTilt || 0;
     scl = creature.drawScale || 1;
   }
+  const kindScale = (typeof creature.sizeScale === 'number') ? creature.sizeScale : getFishKindSizeScale(creature.type);
+  scl *= kindScale;
   ctx.rotate(tilt);
   ctx.scale(creature.dir * scl, scl);
   if (creature.fadeOut) {
@@ -5463,9 +5493,13 @@ async function shareResultShare() {
   const title = '自稱姜太公後人 EDlui釣魚記';
   // 港式口音分享文案：口語炫耀 + 激將 + 短 CTA，提高點擊欲
   const text =
-    '我喺《EDlui釣魚記》釣到 ' + score + ' 分，\n' +
+    '全程力撐呂爵安💙～快投🗳️\n' +
+    '我最喜愛的男歌手：Edan 呂爵安✨\n' +
+    '我最喜愛的歌曲：壞人一個✨\n' +
+    '🔥爵屎ssss立刻行動💪！ https://usca.my903.com\n' +
+    '我喺《EDlui釣魚記》釣到 ' + score + ' 分\n' +
     '一齊嚟跟二登大師學點樣願者上鉤🎣\n' +
-    '連結 → https://limei25art.github.io/E_fishing/\n' +
+    '遊戲連結https://limei25art.github.io/E_fishing/\n' +
     '#EDlui #姜太公後人 #edanlui #網上小遊戲 #免費小遊戲';
   try {
     const blob = await new Promise(function(resolve) {
@@ -5805,7 +5839,7 @@ function showGameOverModal() {
   const playTime = formatPlayTime(elapsedGameTime);
   const cLabel = '#8b95a8', cVal = '#8b7cb8';
   const happy = '#2fbf7e';
-  const rowStyle = 'display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid rgba(26,58,110,0.12);padding:7px 2px;gap:8px;font-weight:400;';
+  const rowStyle = 'display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid rgba(26,58,110,0.12);padding:3px 2px;gap:6px;font-weight:400;line-height:0.95;';
 
   // 個人最好成績（徽章放在分數前方，開心色細字）
   const prevBest = loadPersonalBest();
@@ -7492,7 +7526,7 @@ infoBtn.addEventListener('click', () => {
     infoFishRow('img/turtle.png', '海龜 · 日', '+400／+30') +
     infoFishRow('img/fish_durian.png', '榴槤魚 · 日', '+500／+30') +
     infoFishRow('img/molamola.png', 'Molamola · 全日', '+100／+50') +
-    infoFishRow('img/fish_monster.png', '水怪魚 · 全日', '+800／+100') +
+    infoFishRow('img/fish_monster.png', '海星 · 全日', '+800／+100') +
     infoFishRow('img/seaurchin.png', '海膽 · 晚', '+100／<span style="color:#e11;">-8</span>') +
     infoFishRow('img/fish_watermelon.png', '西瓜魚 · 全日', '<span style="color:#e11;">-20／-8</span>') +
     infoFishRow('img/can.png', '垃圾 can · 全日', '0／<span style="color:#e11;">-30</span>') +
