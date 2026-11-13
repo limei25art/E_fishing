@@ -2735,10 +2735,10 @@ let LINE_PARAMS = {
   hookCatchPadScaleY: 1.1,   // 魚/垃圾判定「直接被鉤子勾到」的垂直寬鬆倍率（基準＝該圖片實際高度）
   hookCatchPadScaleXSpecial: 1.15, // 特殊海洋生物（魷魚/章魚/海參）判定範圍的水平寬鬆倍率（基準＝該圖片實際寬度）
   hookCatchPadScaleYSpecial: 1.15, // 特殊海洋生物判定範圍的垂直寬鬆倍率（基準＝該圖片實際高度）
-  lineStartImgX: 73,         // 站姿貼圖（catImg）上，線起點的 X 座標（貼圖左上角為原點）
-  lineStartImgY: 20,         // 站姿貼圖（catImg）上，線起點的 Y 座標
-  lineStartImg2X: 58,        // 拉竿姿勢貼圖（catImg2）上，線起點的 X 座標
-  lineStartImg2Y: 2,         // 拉竿姿勢貼圖（catImg2）上，線起點的 Y 座標
+  lineStartImgX: 115,         // 站姿貼圖（catImg）上，線起點的 X 座標（貼圖左上角為原點）
+  lineStartImgY: 40,         // 站姿貼圖（catImg）上，線起點的 Y 座標
+  lineStartImg2X: 100,        // 拉竿姿勢貼圖（catImg2）上，線起點的 X 座標
+  lineStartImg2Y: 22,         // 拉竿姿勢貼圖（catImg2）上，線起點的 Y 座標
   hookThrowSkyY: 0,          // 甩竿動畫終點的天空高度（Y 座標，越小鉤子甩得越高）
   lineDrawWidth: 2,          // 釣線繪製的線寬
   lineDashLength: 6,         // 虛線每一段實線的長度
@@ -4991,7 +4991,7 @@ function drawRod() {
   // 畫每段線，根據碰撞狀態決定顏色
   for (let i = 0; i < linePoints.length - 1; i++) {
     ctx.save();
-    ctx.strokeStyle = (lineCollisions[i]) ? '#f00' : '#fff';
+    ctx.strokeStyle = (lineCollisions[i]) ? '#ff0303' : '#fff';
     ctx.lineWidth = LINE_PARAMS.lineDrawWidth;
     ctx.setLineDash([LINE_PARAMS.lineDashLength, LINE_PARAMS.lineDashGap]);
     ctx.beginPath();
